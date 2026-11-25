@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Quiz Generator: Unit 7 Friction</title>
+<title>Physics Quiz Generator</title>
 <style>
 /* ---------- App chrome (screen only) ---------- */
 :root{
@@ -46,6 +46,10 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .bp td.n input{width:46px;padding:4px 6px;border:1px solid var(--rule);border-radius:4px;background:var(--field);color:var(--ink);font:inherit}
 .bp tr.off td{color:var(--muted);opacity:.6}
 .bp .desc{font-size:12px;color:var(--muted);display:block}
+details.unit{border:1px solid var(--rule);border-radius:6px;margin:8px 0;background:var(--field)}
+details.unit summary{cursor:pointer;padding:7px 9px;font-size:13.5px;list-style-position:inside}
+details.unit summary .ucount{float:right;color:var(--accent);font-size:12.5px;font-weight:600}
+details.unit .bp{margin:0 6px 6px;width:calc(100% - 12px)}
 .bp .desc.lsn{font-size:11.5px;color:var(--accent)}
 .note{font-size:12.5px;color:var(--muted);margin:6px 0}
 .roster-status{font-size:13px;margin-top:8px}
@@ -215,10 +219,11 @@ dialog.preview::backdrop{background:rgba(10,20,22,.45)}
 </style>
 </head>
 <body>
+<body>
 <div class="app">
   <aside class="side">
     <h1>Quiz Generator</h1>
-    <p class="sub">Unit 7: Friction. Unique, seat-ordered paper quizzes with matching answer keys.</p>
+    <p class="sub">Unique, seat-ordered paper quizzes and exams with matching answer keys.</p>
 
     <label class="f" for="title">Quiz title</label>
     <input type="text" id="title" value="Unit 7 Quiz: Friction">
@@ -236,9 +241,20 @@ dialog.preview::backdrop{background:rgba(10,20,22,.45)}
     </div>
     <p class="note">Changing the Quiz ID gives every student new numbers and question picks. Keep the same ID to reprint an identical set.</p>
 
-    <h2>Questions per group</h2>
-    <table class="bp" id="blueprint"></table>
-    <p class="note">Greyed-out groups are planned but not built yet.</p>
+    <h2>Blueprint</h2>
+    <label class="f" for="preset">Start from a saved blueprint</label>
+    <select id="preset"></select>
+    <div class="row2">
+      <div><label class="f" for="pageBudget">Page budget</label>
+        <input type="number" id="pageBudget" min="1" max="16" value="2"></div>
+      <div class="btns" style="align-items:flex-end">
+        <button type="button" id="bpSave">Save</button>
+        <button type="button" id="bpLoadBtn">Load…</button>
+        <input type="file" id="bpLoad" accept=".json,application/json" hidden></div>
+    </div>
+    <p class="note" id="bpSummary"></p>
+    <p class="note" id="bpMsg" style="color:var(--warn)"></p>
+    <div id="blueprint"></div>
 
     <h2>Seating chart</h2>
     <p class="note">CSV with columns <b>Group</b>, <b>Seat</b>, <b>First</b>, <b>Last</b> (or a single <b>Name</b> column). Groups 1–7, seats A–D.</p>
@@ -291,15 +307,49 @@ dialog.preview::backdrop{background:rgba(10,20,22,.45)}
   </div>
 </dialog>
 
-<script>
+<!-- Load order matters. Units are listed in units/units.js. -->
+<script>/* ---- lib/qrcode.min.js ---- */
 /* QR Code Generator for JavaScript, Copyright (c) 2009 Kazuhiko Arase, MIT license (https://github.com/kazuhikoarase/qrcode-generator) */
 var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],f={},c=function(t,r){o=function(t){for(var r=new Array(t),e=0;e<t;e+=1){r[e]=new Array(t);for(var n=0;n<t;n+=1)r[e][n]=null}return r}(i=4*e+17),l(0,0),l(i-7,0),l(0,i-7),s(),h(),d(t,r),e>=7&&v(t),null==a&&(a=p(e,n,u)),w(a,r)},l=function(t,r){for(var e=-1;e<=7;e+=1)if(!(t+e<=-1||i<=t+e))for(var n=-1;n<=7;n+=1)r+n<=-1||i<=r+n||(o[t+e][r+n]=0<=e&&e<=6&&(0==n||6==n)||0<=n&&n<=6&&(0==e||6==e)||2<=e&&e<=4&&2<=n&&n<=4)},h=function(){for(var t=8;t<i-8;t+=1)null==o[t][6]&&(o[t][6]=t%2==0);for(var r=8;r<i-8;r+=1)null==o[6][r]&&(o[6][r]=r%2==0)},s=function(){for(var t=B.getPatternPosition(e),r=0;r<t.length;r+=1)for(var n=0;n<t.length;n+=1){var i=t[r],a=t[n];if(null==o[i][a])for(var u=-2;u<=2;u+=1)for(var f=-2;f<=2;f+=1)o[i+u][a+f]=-2==u||2==u||-2==f||2==f||0==u&&0==f}},v=function(t){for(var r=B.getBCHTypeNumber(e),n=0;n<18;n+=1){var a=!t&&1==(r>>n&1);o[Math.floor(n/3)][n%3+i-8-3]=a}for(n=0;n<18;n+=1){a=!t&&1==(r>>n&1);o[n%3+i-8-3][Math.floor(n/3)]=a}},d=function(t,r){for(var e=n<<3|r,a=B.getBCHTypeInfo(e),u=0;u<15;u+=1){var f=!t&&1==(a>>u&1);u<6?o[u][8]=f:u<8?o[u+1][8]=f:o[i-15+u][8]=f}for(u=0;u<15;u+=1){f=!t&&1==(a>>u&1);u<8?o[8][i-u-1]=f:u<9?o[8][15-u-1+1]=f:o[8][15-u-1]=f}o[i-8][8]=!t},w=function(t,r){for(var e=-1,n=i-1,a=7,u=0,f=B.getMaskFunction(r),c=i-1;c>0;c-=2)for(6==c&&(c-=1);;){for(var g=0;g<2;g+=1)if(null==o[n][c-g]){var l=!1;u<t.length&&(l=1==(t[u]>>>a&1)),f(n,c-g)&&(l=!l),o[n][c-g]=l,-1==(a-=1)&&(u+=1,a=7)}if((n+=e)<0||i<=n){n-=e,e=-e;break}}},p=function(t,r,e){for(var n=A.getRSBlocks(t,r),o=b(),i=0;i<e.length;i+=1){var a=e[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var u=0;for(i=0;i<n.length;i+=1)u+=n[i].dataCount;if(o.getLengthInBits()>8*u)throw"code length overflow. ("+o.getLengthInBits()+">"+8*u+")";for(o.getLengthInBits()+4<=8*u&&o.put(0,4);o.getLengthInBits()%8!=0;)o.putBit(!1);for(;!(o.getLengthInBits()>=8*u||(o.put(236,8),o.getLengthInBits()>=8*u));)o.put(17,8);return function(t,r){for(var e=0,n=0,o=0,i=new Array(r.length),a=new Array(r.length),u=0;u<r.length;u+=1){var f=r[u].dataCount,c=r[u].totalCount-f;n=Math.max(n,f),o=Math.max(o,c),i[u]=new Array(f);for(var g=0;g<i[u].length;g+=1)i[u][g]=255&t.getBuffer()[g+e];e+=f;var l=B.getErrorCorrectPolynomial(c),h=k(i[u],l.getLength()-1).mod(l);for(a[u]=new Array(l.getLength()-1),g=0;g<a[u].length;g+=1){var s=g+h.getLength()-a[u].length;a[u][g]=s>=0?h.getAt(s):0}}var v=0;for(g=0;g<r.length;g+=1)v+=r[g].totalCount;var d=new Array(v),w=0;for(g=0;g<n;g+=1)for(u=0;u<r.length;u+=1)g<i[u].length&&(d[w]=i[u][g],w+=1);for(g=0;g<o;g+=1)for(u=0;u<r.length;u+=1)g<a[u].length&&(d[w]=a[u][g],w+=1);return d}(o,n)};f.addData=function(t,r){var e=null;switch(r=r||"Byte"){case"Numeric":e=M(t);break;case"Alphanumeric":e=x(t);break;case"Byte":e=m(t);break;case"Kanji":e=L(t);break;default:throw"mode:"+r}u.push(e),a=null},f.isDark=function(t,r){if(t<0||i<=t||r<0||i<=r)throw t+","+r;return o[t][r]},f.getModuleCount=function(){return i},f.make=function(){if(e<1){for(var t=1;t<40;t++){for(var r=A.getRSBlocks(t,n),o=b(),i=0;i<u.length;i++){var a=u[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var g=0;for(i=0;i<r.length;i++)g+=r[i].dataCount;if(o.getLengthInBits()<=8*g)break}e=t}c(!1,function(){for(var t=0,r=0,e=0;e<8;e+=1){c(!0,e);var n=B.getLostPoint(f);(0==e||t>n)&&(t=n,r=e)}return r}())},f.createTableTag=function(t,r){t=t||2;var e="";e+='<table style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: "+(r=void 0===r?4*t:r)+"px;",e+='">',e+="<tbody>";for(var n=0;n<f.getModuleCount();n+=1){e+="<tr>";for(var o=0;o<f.getModuleCount();o+=1)e+='<td style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: 0px;",e+=" width: "+t+"px;",e+=" height: "+t+"px;",e+=" background-color: ",e+=f.isDark(n,o)?"#000000":"#ffffff",e+=";",e+='"/>';e+="</tr>"}return e+="</tbody>",e+="</table>"},f.createSvgTag=function(t,r,e,n){var o={};"object"==typeof arguments[0]&&(t=(o=arguments[0]).cellSize,r=o.margin,e=o.alt,n=o.title),t=t||2,r=void 0===r?4*t:r,(e="string"==typeof e?{text:e}:e||{}).text=e.text||null,e.id=e.text?e.id||"qrcode-description":null,(n="string"==typeof n?{text:n}:n||{}).text=n.text||null,n.id=n.text?n.id||"qrcode-title":null;var i,a,u,c,g=f.getModuleCount()*t+2*r,l="";for(c="l"+t+",0 0,"+t+" -"+t+",0 0,-"+t+"z ",l+='<svg version="1.1" xmlns="http://www.w3.org/2000/svg"',l+=o.scalable?"":' width="'+g+'px" height="'+g+'px"',l+=' viewBox="0 0 '+g+" "+g+'" ',l+=' preserveAspectRatio="xMinYMin meet"',l+=n.text||e.text?' role="img" aria-labelledby="'+y([n.id,e.id].join(" ").trim())+'"':"",l+=">",l+=n.text?'<title id="'+y(n.id)+'">'+y(n.text)+"</title>":"",l+=e.text?'<description id="'+y(e.id)+'">'+y(e.text)+"</description>":"",l+='<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>',l+='<path d="',a=0;a<f.getModuleCount();a+=1)for(u=a*t+r,i=0;i<f.getModuleCount();i+=1)f.isDark(a,i)&&(l+="M"+(i*t+r)+","+u+c);return l+='" stroke="transparent" fill="black"/>',l+="</svg>"},f.createDataURL=function(t,r){t=t||2,r=void 0===r?4*t:r;var e=f.getModuleCount()*t+2*r,n=r,o=e-r;return I(e,e,(function(r,e){if(n<=r&&r<o&&n<=e&&e<o){var i=Math.floor((r-n)/t),a=Math.floor((e-n)/t);return f.isDark(a,i)?0:1}return 1}))},f.createImgTag=function(t,r,e){t=t||2,r=void 0===r?4*t:r;var n=f.getModuleCount()*t+2*r,o="";return o+="<img",o+=' src="',o+=f.createDataURL(t,r),o+='"',o+=' width="',o+=n,o+='"',o+=' height="',o+=n,o+='"',e&&(o+=' alt="',o+=y(e),o+='"'),o+="/>"};var y=function(t){for(var r="",e=0;e<t.length;e+=1){var n=t.charAt(e);switch(n){case"<":r+="&lt;";break;case">":r+="&gt;";break;case"&":r+="&amp;";break;case'"':r+="&quot;";break;default:r+=n}}return r};return f.createASCII=function(t,r){if((t=t||1)<2)return function(t){t=void 0===t?2:t;var r,e,n,o,i,a=1*f.getModuleCount()+2*t,u=t,c=a-t,g={"██":"█","█ ":"▀"," █":"▄","  ":" "},l={"██":"▀","█ ":"▀"," █":" ","  ":" "},h="";for(r=0;r<a;r+=2){for(n=Math.floor((r-u)/1),o=Math.floor((r+1-u)/1),e=0;e<a;e+=1)i="█",u<=e&&e<c&&u<=r&&r<c&&f.isDark(n,Math.floor((e-u)/1))&&(i=" "),u<=e&&e<c&&u<=r+1&&r+1<c&&f.isDark(o,Math.floor((e-u)/1))?i+=" ":i+="█",h+=t<1&&r+1>=c?l[i]:g[i];h+="\n"}return a%2&&t>0?h.substring(0,h.length-a-1)+Array(a+1).join("▀"):h.substring(0,h.length-1)}(r);t-=1,r=void 0===r?2*t:r;var e,n,o,i,a=f.getModuleCount()*t+2*r,u=r,c=a-r,g=Array(t+1).join("██"),l=Array(t+1).join("  "),h="",s="";for(e=0;e<a;e+=1){for(o=Math.floor((e-u)/t),s="",n=0;n<a;n+=1)i=1,u<=n&&n<c&&u<=e&&e<c&&f.isDark(o,Math.floor((n-u)/t))&&(i=0),s+=i?g:l;for(o=0;o<t;o+=1)h+=s+"\n"}return h.substring(0,h.length-1)},f.renderTo2dContext=function(t,r){r=r||2;for(var e=f.getModuleCount(),n=0;n<e;n++)for(var o=0;o<e;o++)t.fillStyle=f.isDark(n,o)?"black":"white",t.fillRect(n*r,o*r,r,r)},f};t.stringToBytes=(t.stringToBytesFuncs={default:function(t){for(var r=[],e=0;e<t.length;e+=1){var n=t.charCodeAt(e);r.push(255&n)}return r}}).default,t.createStringToBytes=function(t,r){var e=function(){for(var e=S(t),n=function(){var t=e.read();if(-1==t)throw"eof";return t},o=0,i={};;){var a=e.read();if(-1==a)break;var u=n(),f=n()<<8|n();i[String.fromCharCode(a<<8|u)]=f,o+=1}if(o!=r)throw o+" != "+r;return i}(),n="?".charCodeAt(0);return function(t){for(var r=[],o=0;o<t.length;o+=1){var i=t.charCodeAt(o);if(i<128)r.push(i);else{var a=e[t.charAt(o)];"number"==typeof a?(255&a)==a?r.push(a):(r.push(a>>>8),r.push(255&a)):r.push(n)}}return r}};var r,e,n,o,i,a=1,u=2,f=4,c=8,g={L:1,M:0,Q:3,H:2},l=0,h=1,s=2,v=3,d=4,w=5,p=6,y=7,B=(r=[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],e=1335,n=7973,i=function(t){for(var r=0;0!=t;)r+=1,t>>>=1;return r},(o={}).getBCHTypeInfo=function(t){for(var r=t<<10;i(r)-i(e)>=0;)r^=e<<i(r)-i(e);return 21522^(t<<10|r)},o.getBCHTypeNumber=function(t){for(var r=t<<12;i(r)-i(n)>=0;)r^=n<<i(r)-i(n);return t<<12|r},o.getPatternPosition=function(t){return r[t-1]},o.getMaskFunction=function(t){switch(t){case l:return function(t,r){return(t+r)%2==0};case h:return function(t,r){return t%2==0};case s:return function(t,r){return r%3==0};case v:return function(t,r){return(t+r)%3==0};case d:return function(t,r){return(Math.floor(t/2)+Math.floor(r/3))%2==0};case w:return function(t,r){return t*r%2+t*r%3==0};case p:return function(t,r){return(t*r%2+t*r%3)%2==0};case y:return function(t,r){return(t*r%3+(t+r)%2)%2==0};default:throw"bad maskPattern:"+t}},o.getErrorCorrectPolynomial=function(t){for(var r=k([1],0),e=0;e<t;e+=1)r=r.multiply(k([1,C.gexp(e)],0));return r},o.getLengthInBits=function(t,r){if(1<=r&&r<10)switch(t){case a:return 10;case u:return 9;case f:case c:return 8;default:throw"mode:"+t}else if(r<27)switch(t){case a:return 12;case u:return 11;case f:return 16;case c:return 10;default:throw"mode:"+t}else{if(!(r<41))throw"type:"+r;switch(t){case a:return 14;case u:return 13;case f:return 16;case c:return 12;default:throw"mode:"+t}}},o.getLostPoint=function(t){for(var r=t.getModuleCount(),e=0,n=0;n<r;n+=1)for(var o=0;o<r;o+=1){for(var i=0,a=t.isDark(n,o),u=-1;u<=1;u+=1)if(!(n+u<0||r<=n+u))for(var f=-1;f<=1;f+=1)o+f<0||r<=o+f||0==u&&0==f||a==t.isDark(n+u,o+f)&&(i+=1);i>5&&(e+=3+i-5)}for(n=0;n<r-1;n+=1)for(o=0;o<r-1;o+=1){var c=0;t.isDark(n,o)&&(c+=1),t.isDark(n+1,o)&&(c+=1),t.isDark(n,o+1)&&(c+=1),t.isDark(n+1,o+1)&&(c+=1),0!=c&&4!=c||(e+=3)}for(n=0;n<r;n+=1)for(o=0;o<r-6;o+=1)t.isDark(n,o)&&!t.isDark(n,o+1)&&t.isDark(n,o+2)&&t.isDark(n,o+3)&&t.isDark(n,o+4)&&!t.isDark(n,o+5)&&t.isDark(n,o+6)&&(e+=40);for(o=0;o<r;o+=1)for(n=0;n<r-6;n+=1)t.isDark(n,o)&&!t.isDark(n+1,o)&&t.isDark(n+2,o)&&t.isDark(n+3,o)&&t.isDark(n+4,o)&&!t.isDark(n+5,o)&&t.isDark(n+6,o)&&(e+=40);var g=0;for(o=0;o<r;o+=1)for(n=0;n<r;n+=1)t.isDark(n,o)&&(g+=1);return e+=Math.abs(100*g/r/r-50)/5*10},o),C=function(){for(var t=new Array(256),r=new Array(256),e=0;e<8;e+=1)t[e]=1<<e;for(e=8;e<256;e+=1)t[e]=t[e-4]^t[e-5]^t[e-6]^t[e-8];for(e=0;e<255;e+=1)r[t[e]]=e;var n={glog:function(t){if(t<1)throw"glog("+t+")";return r[t]},gexp:function(r){for(;r<0;)r+=255;for(;r>=256;)r-=255;return t[r]}};return n}();function k(t,r){if(void 0===t.length)throw t.length+"/"+r;var e=function(){for(var e=0;e<t.length&&0==t[e];)e+=1;for(var n=new Array(t.length-e+r),o=0;o<t.length-e;o+=1)n[o]=t[o+e];return n}(),n={getAt:function(t){return e[t]},getLength:function(){return e.length},multiply:function(t){for(var r=new Array(n.getLength()+t.getLength()-1),e=0;e<n.getLength();e+=1)for(var o=0;o<t.getLength();o+=1)r[e+o]^=C.gexp(C.glog(n.getAt(e))+C.glog(t.getAt(o)));return k(r,0)},mod:function(t){if(n.getLength()-t.getLength()<0)return n;for(var r=C.glog(n.getAt(0))-C.glog(t.getAt(0)),e=new Array(n.getLength()),o=0;o<n.getLength();o+=1)e[o]=n.getAt(o);for(o=0;o<t.getLength();o+=1)e[o]^=C.gexp(C.glog(t.getAt(o))+r);return k(e,0).mod(t)}};return n}var A=function(){var t=[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12,7,37,13],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]],r=function(t,r){var e={};return e.totalCount=t,e.dataCount=r,e},e={};return e.getRSBlocks=function(e,n){var o=function(r,e){switch(e){case g.L:return t[4*(r-1)+0];case g.M:return t[4*(r-1)+1];case g.Q:return t[4*(r-1)+2];case g.H:return t[4*(r-1)+3];default:return}}(e,n);if(void 0===o)throw"bad rs block @ typeNumber:"+e+"/errorCorrectionLevel:"+n;for(var i=o.length/3,a=[],u=0;u<i;u+=1)for(var f=o[3*u+0],c=o[3*u+1],l=o[3*u+2],h=0;h<f;h+=1)a.push(r(c,l));return a},e}(),b=function(){var t=[],r=0,e={getBuffer:function(){return t},getAt:function(r){var e=Math.floor(r/8);return 1==(t[e]>>>7-r%8&1)},put:function(t,r){for(var n=0;n<r;n+=1)e.putBit(1==(t>>>r-n-1&1))},getLengthInBits:function(){return r},putBit:function(e){var n=Math.floor(r/8);t.length<=n&&t.push(0),e&&(t[n]|=128>>>r%8),r+=1}};return e},M=function(t){var r=a,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+2<r.length;)t.put(o(r.substring(n,n+3)),10),n+=3;n<r.length&&(r.length-n==1?t.put(o(r.substring(n,n+1)),4):r.length-n==2&&t.put(o(r.substring(n,n+2)),7))}},o=function(t){for(var r=0,e=0;e<t.length;e+=1)r=10*r+i(t.charAt(e));return r},i=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);throw"illegal char :"+t};return n},x=function(t){var r=u,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+1<r.length;)t.put(45*o(r.charAt(n))+o(r.charAt(n+1)),11),n+=2;n<r.length&&t.put(o(r.charAt(n)),6)}},o=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);if("A"<=t&&t<="Z")return t.charCodeAt(0)-"A".charCodeAt(0)+10;switch(t){case" ":return 36;case"$":return 37;case"%":return 38;case"*":return 39;case"+":return 40;case"-":return 41;case".":return 42;case"/":return 43;case":":return 44;default:throw"illegal char :"+t}};return n},m=function(r){var e=f,n=t.stringToBytes(r),o={getMode:function(){return e},getLength:function(t){return n.length},write:function(t){for(var r=0;r<n.length;r+=1)t.put(n[r],8)}};return o},L=function(r){var e=c,n=t.stringToBytesFuncs.SJIS;if(!n)throw"sjis not supported.";!function(t,r){var e=n("友");if(2!=e.length||38726!=(e[0]<<8|e[1]))throw"sjis not supported."}();var o=n(r),i={getMode:function(){return e},getLength:function(t){return~~(o.length/2)},write:function(t){for(var r=o,e=0;e+1<r.length;){var n=(255&r[e])<<8|255&r[e+1];if(33088<=n&&n<=40956)n-=33088;else{if(!(57408<=n&&n<=60351))throw"illegal char at "+(e+1)+"/"+n;n-=49472}n=192*(n>>>8&255)+(255&n),t.put(n,13),e+=2}if(e<r.length)throw"illegal char at "+(e+1)}};return i},D=function(){var t=[],r={writeByte:function(r){t.push(255&r)},writeShort:function(t){r.writeByte(t),r.writeByte(t>>>8)},writeBytes:function(t,e,n){e=e||0,n=n||t.length;for(var o=0;o<n;o+=1)r.writeByte(t[o+e])},writeString:function(t){for(var e=0;e<t.length;e+=1)r.writeByte(t.charCodeAt(e))},toByteArray:function(){return t},toString:function(){var r="";r+="[";for(var e=0;e<t.length;e+=1)e>0&&(r+=","),r+=t[e];return r+="]"}};return r},S=function(t){var r=t,e=0,n=0,o=0,i={read:function(){for(;o<8;){if(e>=r.length){if(0==o)return-1;throw"unexpected end of file./"+o}var t=r.charAt(e);if(e+=1,"="==t)return o=0,-1;t.match(/^\s$/)||(n=n<<6|a(t.charCodeAt(0)),o+=6)}var i=n>>>o-8&255;return o-=8,i}},a=function(t){if(65<=t&&t<=90)return t-65;if(97<=t&&t<=122)return t-97+26;if(48<=t&&t<=57)return t-48+52;if(43==t)return 62;if(47==t)return 63;throw"c:"+t};return i},I=function(t,r,e){for(var n=function(t,r){var e=t,n=r,o=new Array(t*r),i={setPixel:function(t,r,n){o[r*e+t]=n},write:function(t){t.writeString("GIF87a"),t.writeShort(e),t.writeShort(n),t.writeByte(128),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(255),t.writeByte(255),t.writeByte(255),t.writeString(","),t.writeShort(0),t.writeShort(0),t.writeShort(e),t.writeShort(n),t.writeByte(0);var r=a(2);t.writeByte(2);for(var o=0;r.length-o>255;)t.writeByte(255),t.writeBytes(r,o,255),o+=255;t.writeByte(r.length-o),t.writeBytes(r,o,r.length-o),t.writeByte(0),t.writeString(";")}},a=function(t){for(var r=1<<t,e=1+(1<<t),n=t+1,i=u(),a=0;a<r;a+=1)i.add(String.fromCharCode(a));i.add(String.fromCharCode(r)),i.add(String.fromCharCode(e));var f,c,g,l=D(),h=(f=l,c=0,g=0,{write:function(t,r){if(t>>>r!=0)throw"length over";for(;c+r>=8;)f.writeByte(255&(t<<c|g)),r-=8-c,t>>>=8-c,g=0,c=0;g|=t<<c,c+=r},flush:function(){c>0&&f.writeByte(g)}});h.write(r,n);var s=0,v=String.fromCharCode(o[s]);for(s+=1;s<o.length;){var d=String.fromCharCode(o[s]);s+=1,i.contains(v+d)?v+=d:(h.write(i.indexOf(v),n),i.size()<4095&&(i.size()==1<<n&&(n+=1),i.add(v+d)),v=d)}return h.write(i.indexOf(v),n),h.write(e,n),h.flush(),l.toByteArray()},u=function(){var t={},r=0,e={add:function(n){if(e.contains(n))throw"dup key:"+n;t[n]=r,r+=1},size:function(){return r},indexOf:function(r){return t[r]},contains:function(r){return void 0!==t[r]}};return e};return i}(t,r),o=0;o<r;o+=1)for(var i=0;i<t;i+=1)n.setPixel(i,o,e(i,o));var a=D();n.write(a);for(var u=function(){var t=0,r=0,e=0,n="",o={},i=function(t){n+=String.fromCharCode(a(63&t))},a=function(t){if(t<0);else{if(t<26)return 65+t;if(t<52)return t-26+97;if(t<62)return t-52+48;if(62==t)return 43;if(63==t)return 47}throw"n:"+t};return o.writeByte=function(n){for(t=t<<8|255&n,r+=8,e+=1;r>=6;)i(t>>>r-6),r-=6},o.flush=function(){if(r>0&&(i(t<<6-r),t=0,r=0),e%3!=0)for(var o=3-e%3,a=0;a<o;a+=1)n+="="},o.toString=function(){return n},o}(),f=a.toByteArray(),c=0;c<f.length;c+=1)u.writeByte(f[c]);return u.flush(),"data:image/gif;base64,"+u};return t}();qrcode.stringToBytesFuncs["UTF-8"]=function(t){return function(t){for(var r=[],e=0;e<t.length;e++){var n=t.charCodeAt(e);n<128?r.push(n):n<2048?r.push(192|n>>6,128|63&n):n<55296||n>=57344?r.push(224|n>>12,128|n>>6&63,128|63&n):(e++,n=65536+((1023&n)<<10|1023&t.charCodeAt(e)),r.push(240|n>>18,128|n>>12&63,128|n>>6&63,128|63&n))}return r}(t)},function(t){"function"==typeof define&&define.amd?define([],t):"object"==typeof exports&&(module.exports=t())}((function(){return qrcode}));
-</script>
 
-<script>
+</script>
+<script>/* ---- engine/core.js ---- */
+/* =====================================================================
+   engine/core.js
+   Shared by every unit: the question registry, course settings, seeded
+   randomness, number formatting, and the building blocks for parts
+   (numeric rows, choices, free-body diagrams, explanations).
+   Load order (see index.html): lib/qrcode.min.js, engine/core.js,
+   engine/figures.js, course.js, units/*.js, engine/app.js
+   ===================================================================== */
 "use strict";
-const G = 9.81;
-const KEY_FORMAT = "physics-quiz-key/1";
+
+/* ---------------- Registry ---------------- */
+const QB = {
+  ENGINE_VERSION: "2.0.0",
+  KEY_FORMAT: "physics-quiz-key/2",
+  BLUEPRINT_FORMAT: "physics-quiz-blueprint/1",
+  course: { name: "Physics", g: 9.81, sigFigs: 3, tolerancePct: 2, workSpace: 1, pageBudget: 2, presets: [] },
+  units: [],      // in course order
+  groups: [],     // every group from every unit, each with .uid ("U7-A1") and .unit
+  byUid: {},
+  setCourse(c) { Object.assign(this.course, c); G = this.course.g; },
+  registerUnit(u) {
+    for (const k of ["id", "number", "title", "version", "groups"]) if (u[k] === undefined) throw new Error(`Unit is missing "${k}"`);
+    if (this.units.some(x => x.id === u.id)) throw new Error(`Unit ${u.id} is registered twice`);
+    for (const g of u.groups) {
+      g.uid = `${u.id}-${g.id}`;
+      g.unit = u;
+      if (this.byUid[g.uid]) throw new Error(`Duplicate group ${g.uid}`);
+      this.byUid[g.uid] = g;
+    }
+    this.units.push(u);
+    this.units.sort((a, b) => a.number - b.number);
+    this.groups = this.units.flatMap(x => x.groups);
+  },
+};
+let G = 9.81; // gravitational field strength; set from course.js through QB.setCourse
+const KEY_FORMAT = QB.KEY_FORMAT;
 
 /* ---------------- Seeded randomness ---------------- */
 function cyrb53(str, seed = 0) {
@@ -331,11 +381,13 @@ function makeRng(key) {
 }
 
 /* ---------------- Numbers & text ---------------- */
-const sf3 = x => Number(Number(x).toPrecision(3));
-const r4 = x => x === 0 ? 0 : Number(Number(x).toPrecision(4));
+// The "3" in these names is historical: they use the course's significant figures (QB.course.sigFigs).
+const SF = () => QB.course.sigFigs;
+const sf3 = x => Number(Number(x).toPrecision(SF()));
+const r4 = x => x === 0 ? 0 : Number(Number(x).toPrecision(SF() + 1));
 function fmt3(x) {
   if (x === 0) return "0";
-  const s = Number(x).toPrecision(3);
+  const s = Number(x).toPrecision(SF());
   if (!/e/.test(s)) return s.replace("-", "−");
   const [m, e] = s.split("e");
   return `${m.replace("-", "−")} × 10<sup>${parseInt(e, 10)}</sup>`;
@@ -348,6 +400,70 @@ const plain = h => String(h).replace(/<sub>(.*?)<\/sub>/g, "_$1").replace(/<sup>
 const MU_S = "μ<sub>s</sub>", MU_K = "μ<sub>k</sub>";
 const CODE_ABC = "ACDEFHJKMNPRTUVWXY3479"; // no look-alike characters (0/O, 1/I/L, 2/Z, 5/S, 8/B, 6/G)
 
+/* ---------------- Parts: one model drives the quiz page, the printed key and the JSON key ----------------
+   Part types: num, choice, fbd, gu (given & unknown), explanation, row (table row).
+   expr strings use given symbols and {tag} for another part of the same question (for error carried forward). */
+const tagSpan = (t, cls = "") => `<span class="ctag ${cls}"><span class="qnum"></span>${t}</span>`;
+const cbOpt = o => `<span class="opt" data-opt="${esc(o)}"><span class="cb"></span>${o}</span>`;
+function num(tag, prompt, value, unit, expr, deps = [], note = "") { return { tag, type: "num", prompt, value, unit, expr, deps, note, pts: { work: 1, answer: 1 } }; }
+function choice(tag, prompt, options, answer, expr = "", deps = []) { return { tag, type: "choice", prompt, options, answer, expr, deps, pts: { answer: 1 } }; }
+function fbdPart(forces, when) { return { tag: "a", type: "fbd", prompt: `Free-body diagram ${when}`, forces, pts: { fbd: 2 } }; }
+const GU = { tag: "gu", type: "gu", prompt: "Given and unknown values listed", pts: { work: 1 } };
+const withEq = (spec, map) => { for (const p of spec) if (map[p.tag]) p.eq = map[p.tag]; return spec; };
+const SUB = (a, b) => `${a}<sub>${b}</sub>`;
+const ptsOf = p => Object.values(p.pts).reduce((a, b) => a + b, 0);
+
+function setupBlock(fig) {
+  return `<div class="setup${fig ? " withfig" : ""}"><div class="fbd"><span class="l">Free-body diagram</span>${tagSpan("a")}</div>
+    <div class="gu"><div><span class="l">Given</span>${tagSpan("gu")}</div><div><span class="l">Unknown</span></div></div>${fig ? `<div class="sfig">${fig}</div>` : ""}</div>`;
+}
+function workTable(spec) {
+  let rows = "";
+  for (const p of spec) {
+    if (p.type === "choice") {
+      rows += `<tr class="ch" data-tag="${p.tag}"><td class="p"><b>(${p.tag})</b> ${p.prompt}</td><td colspan="4" class="choice">${tagSpan(p.tag)}&nbsp;&nbsp; ${p.options.map(cbOpt).join("")}<small>(mark one)</small></td></tr>`;
+    } else if (p.type === "num") {
+      rows += `<tr data-tag="${p.tag}"><td class="p"><b>(${p.tag})</b> ${p.prompt}</td><td class="eq"></td><td class="sub"></td><td class="val">${tagSpan(p.tag, "corner")}</td><td class="unit"></td></tr>`;
+    }
+  }
+  return `<table class="work"><colgroup><col style="width:27%"><col style="width:19%"><col style="width:28%"><col style="width:16%"><col style="width:10%"></colgroup>
+    <thead><tr><th>Find</th><th>Equation</th><th>Substitute &amp; solve</th><th>Value (${SF()} s.f.)</th><th>Units</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+const STD_FORCES = (applied) => [
+  { force: "Weight", symbol: "W or mg", label: "W", direction: "down" },
+  { force: "Normal force", symbol: "N", label: "N", direction: "up" },
+  { force: applied, symbol: "F_A or T", label: /tension/i.test(applied) ? "T" : "F_A", direction: "right" },
+  { force: "Friction", symbol: "f", label: "f", direction: "left" },
+];
+
+/* ---------------- Helpers for the newer groups ---------------- */
+function mcBlock(p, layout = "col") {
+  return `<div class="mc" data-tag="${p.tag}"><div class="mcq"><b>(${p.tag})</b> ${p.prompt} ${tagSpan(p.tag)}${p.multi ? ` <small class="sans" style="color:#888">(mark ${p.multi})</small>` : ""}</div>
+    <div class="mco ${layout}">${p.options.map(cbOpt).join("")}</div></div>`;
+}
+function explainBlock(p, n = 2) {
+  return `<div class="mc"><div class="mcq"><b>(${p.tag})</b> ${p.prompt} ${tagSpan(p.tag)}</div><div class="lines" data-tag="${p.tag}">${"<div></div>".repeat(n)}</div></div>`;
+}
+function choiceRows(spec) {
+  return `<table class="cmp">${spec.map(p => `<tr data-tag="${p.tag}"><td>(${p.tag}) ${p.prompt}</td><td class="opts">${tagSpan(p.tag)}&nbsp; ${p.options.map(cbOpt).join("")}</td></tr>`).join("")}</table>`;
+}
+const explain = (tag, prompt, model, ideas, fill) => ({ tag, type: "explanation", prompt, model, ideas, fill, pts: { explanation: 2 } });
+const multiChoice = (tag, prompt, options, answers) => ({ tag, type: "choice", prompt, options, answer: answers, multi: answers.length, pts: { answer: 1 } });
+const FRC = (force, label, direction) => ({ force, symbol: label, label, direction });
+const fmtK = k => ({ 0.5: "half", [1 / 3]: "one-third", 2: "twice", 3: "three times" }[k]);
+
+const lessonShort = g => (g.lessons || []).map(l => l[0]).join(", ");
+const lessonLong = g => (g.lessons || []).map(l => `${l[0]} ${l[1]} (${l[2]})`).join("; ");
+
+</script>
+<script>/* ---- engine/figures.js ---- */
+/* =====================================================================
+   engine/figures.js
+   Reusable SVG drawings: ground, people, arrows, boxes, vehicles, graphs,
+   and the QR code. Any unit can use these. Figures that only make sense
+   for one unit can live in that unit's file instead.
+   ===================================================================== */
+"use strict";
 /* ---------------- Drawing helpers (SVG) ---------------- */
 function ground(x1, x2, y, rough) {
   if (rough) {
@@ -450,85 +566,155 @@ function qrSVG(text) {
   return `<svg class="qrc" viewBox="-2 -2 ${n + 4} ${n + 4}" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" role="img" aria-label="Page ID code"><rect x="-2" y="-2" width="${n + 4}" height="${n + 4}" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
 }
 
-/* ---------------- Parts: one model drives the quiz page, the printed key and the JSON key ----------------
-   Part types: num, choice, fbd, gu (given & unknown), explanation, row (table row).
-   expr strings use given symbols and {tag} for another part of the same question (for error carried forward). */
-const tagSpan = (t, cls = "") => `<span class="ctag ${cls}"><span class="qnum"></span>${t}</span>`;
-const cbOpt = o => `<span class="opt" data-opt="${esc(o)}"><span class="cb"></span>${o}</span>`;
-function num(tag, prompt, value, unit, expr, deps = [], note = "") { return { tag, type: "num", prompt, value, unit, expr, deps, note, pts: { work: 1, answer: 1 } }; }
-function choice(tag, prompt, options, answer, expr = "", deps = []) { return { tag, type: "choice", prompt, options, answer, expr, deps, pts: { answer: 1 } }; }
-function fbdPart(forces, when) { return { tag: "a", type: "fbd", prompt: `Free-body diagram ${when}`, forces, pts: { fbd: 2 } }; }
-const GU = { tag: "gu", type: "gu", prompt: "Given and unknown values listed", pts: { work: 1 } };
-const withEq = (spec, map) => { for (const p of spec) if (map[p.tag]) p.eq = map[p.tag]; return spec; };
-const SUB = (a, b) => `${a}<sub>${b}</sub>`;
-const ptsOf = p => Object.values(p.pts).reduce((a, b) => a + b, 0);
-
-function setupBlock(fig) {
-  return `<div class="setup${fig ? " withfig" : ""}"><div class="fbd"><span class="l">Free-body diagram</span>${tagSpan("a")}</div>
-    <div class="gu"><div><span class="l">Given</span>${tagSpan("gu")}</div><div><span class="l">Unknown</span></div></div>${fig ? `<div class="sfig">${fig}</div>` : ""}</div>`;
+/* ---- figures ---- */
+const SVGF = `font-family="Avenir Next,Segoe UI,Arial,sans-serif"`;
+function motionArrow(x, y, label = "v") { return arrow(x, y, x + 34, y, label, x + 12, y - 5); }
+function bikeSVG(opts = {}) {
+  const W = 170, H = 94, gy = H - 10;
+  let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bicyclist">`;
+  s += ground(6, W - 6, gy, false);
+  const r = 14, x1 = 48, x2 = 104, wy = gy - r;
+  const seat = [x1 + 24, wy - 24], bar = [x2 - 4, wy - 30], sh = [x1 + 40, wy - 46];
+  s += `<g stroke="#222" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="${x1}" cy="${wy}" r="${r}"/><circle cx="${x2}" cy="${wy}" r="${r}"/>
+    <path d="M${x1} ${wy} L${x1 + 28} ${wy} L${seat[0]} ${seat[1]} L${x2 - 8} ${wy - 24} L${x2} ${wy} M${x1 + 28} ${wy} L${x2 - 8} ${wy - 24} M${x1} ${wy} L${seat[0]} ${seat[1]} M${x2 - 8} ${wy - 24} L${bar[0]} ${bar[1]} M${seat[0] - 5} ${seat[1]} h10"/>
+    <path d="M${seat[0]} ${seat[1] - 2} L${sh[0]} ${sh[1]} L${bar[0]} ${bar[1]} M${seat[0]} ${seat[1] - 2} L${x1 + 36} ${wy - 12} L${x1 + 30} ${wy}"/>
+    <circle cx="${sh[0] + 5}" cy="${sh[1] - 8}" r="5.5" fill="#fff"/></g>`;
+  s += motionArrow(W - 50, 18, "v");
+  if (opts.skid) s += `<path d="M${x2 + 14} ${gy - 1} h28 M${x1 - 40} ${gy - 1} h22" stroke="#555" stroke-width="2.4"/>`;
+  return s + "</svg>";
 }
-function workTable(spec) {
-  let rows = "";
-  for (const p of spec) {
-    if (p.type === "choice") {
-      rows += `<tr class="ch" data-tag="${p.tag}"><td class="p"><b>(${p.tag})</b> ${p.prompt}</td><td colspan="4" class="choice">${tagSpan(p.tag)}&nbsp;&nbsp; ${p.options.map(cbOpt).join("")}<small>(mark one)</small></td></tr>`;
-    } else if (p.type === "num") {
-      rows += `<tr data-tag="${p.tag}"><td class="p"><b>(${p.tag})</b> ${p.prompt}</td><td class="eq"></td><td class="sub"></td><td class="val">${tagSpan(p.tag, "corner")}</td><td class="unit"></td></tr>`;
-    }
+function truckSVG(dir = "right") {
+  const W = 240, H = 92, gy = H - 8;
+  let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Box on a truck bed">`;
+  s += ground(6, W - 6, gy, false);
+  s += `<g stroke="#222" stroke-width="1.3">
+    <rect x="22" y="${gy - 34}" width="132" height="8" fill="#e4e4e4"/>
+    <rect x="22" y="${gy - 26}" width="178" height="12" fill="#f4f4f4"/>
+    <path d="M154 ${gy - 26} V${gy - 62} H184 L200 ${gy - 42} V${gy - 26} Z" fill="#f4f4f4"/>
+    <rect x="160" y="${gy - 56}" width="20" height="14" fill="#fff"/>
+    <rect x="66" y="${gy - 62}" width="30" height="28" fill="#e4e4e4"/>
+    <circle cx="52" cy="${gy - 10}" r="10" fill="#fff"/><circle cx="174" cy="${gy - 10}" r="10" fill="#fff"/></g>`;
+  s += motionArrow(176, 12, "v");
+  return s + "</svg>";
+}
+function tugSVG() {
+  const W = 300, H = 74, gy = H - 12, bx = 132, bw = 36, bh = 34;
+  let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Block pulled from both sides">`;
+  s += ground(6, W - 6, gy, false);
+  s += `<rect x="${bx}" y="${gy - bh}" width="${bw}" height="${bh}" fill="#e4e4e4" stroke="#222" stroke-width="1.2"/>`;
+  const ry = gy - 20, hx = bx + bw + 74;
+  const right = `<line x1="${bx + bw}" y1="${ry}" x2="${hx}" y2="${ry}" stroke="#222" stroke-width="1.1"/>${puller(hx, ry, gy)}`;
+  s += right + `<g transform="translate(${2 * bx + bw} 0) scale(-1 1)">${right}</g>`;
+  s += `<text x="${bx - 56}" y="${ry - 5}" ${SVGF} font-size="10">T<tspan baseline-shift="sub" font-size="7">L</tspan></text><text x="${bx + bw + 46}" y="${ry - 5}" ${SVGF} font-size="10">T<tspan baseline-shift="sub" font-size="7">R</tspan></text>`;
+  return s + "</svg>";
+}
+function photoStripSVG(kind) {
+  const W = 400, H = 62, gy = 52;
+  const gaps = [0, 1, 2, 3, 4, 5].map(i => kind === "constant" ? 55 : kind === "speeding" ? 32 + i * 9.5 : 79.5 - i * 9.5);
+  let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Photo strip of a pushed box">`;
+  s += ground(4, W - 4, gy, false);
+  let x = 26;
+  for (let i = 0; i < 7; i++) {
+    s += `<rect x="${x}" y="${gy - 15}" width="15" height="15" fill="#e4e4e4" stroke="#222" stroke-width="1"/>
+      <g stroke="#222" stroke-width="1" fill="none"><circle cx="${x - 9}" cy="${gy - 26}" r="3.2" fill="#fff"/>
+      <path d="M${x - 10} ${gy - 22} L${x - 13} ${gy - 11} L${x - 19} ${gy} M${x - 13} ${gy - 11} L${x - 8} ${gy} M${x - 11} ${gy - 19} L${x} ${gy - 16}"/></g>`;
+    if (i < 6) x += gaps[i];
   }
-  return `<table class="work"><colgroup><col style="width:27%"><col style="width:19%"><col style="width:28%"><col style="width:16%"><col style="width:10%"></colgroup>
-    <thead><tr><th>Find</th><th>Equation</th><th>Substitute &amp; solve</th><th>Value (3 s.f.)</th><th>Units</th></tr></thead><tbody>${rows}</tbody></table>`;
+  return s + "</svg>";
 }
-const STD_FORCES = (applied) => [
-  { force: "Weight", symbol: "W or mg", label: "W", direction: "down" },
-  { force: "Normal force", symbol: "N", label: "N", direction: "up" },
-  { force: applied, symbol: "F_A or T", label: /tension/i.test(applied) ? "T" : "F_A", direction: "right" },
-  { force: "Friction", symbol: "f", label: "f", direction: "left" },
-];
+function miniGraphSVG(kind) {
+  const W = 128, H = 96, L = 20, B = 18, T = 6, R = 6, pw = W - L - R, ph = H - T - B;
+  const X = u => L + pw * u, Y = v => T + ph * (1 - v);
+  const pts = {
+    correct: [[0, 0], [.55, .8], [.56, .55], [1, .55]],
+    nodrop: [[0, 0], [.55, .8], [1, .8]],
+    linear: [[0, 0], [1, .95]],
+    tozero: [[0, 0], [.55, .8], [.56, 0], [1, 0]],
+  }[kind];
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Friction versus applied force graph">
+    <line x1="${L}" y1="${T}" x2="${L}" y2="${T + ph}" stroke="#222"/><line x1="${L}" y1="${T + ph}" x2="${L + pw}" y2="${T + ph}" stroke="#222"/>
+    <text transform="translate(12 ${T + ph / 2}) rotate(-90)" ${SVGF} font-size="8.5" text-anchor="middle">Friction</text>
+    <text x="${L + pw / 2}" y="${H - 4}" ${SVGF} font-size="8.5" text-anchor="middle">Applied force</text>
+    <polyline points="${pts.map(([u, v]) => `${X(u)},${Y(v)}`).join(" ")}" fill="none" stroke="#111" stroke-width="2"/></svg>`;
+}
+function vtGraphSVG(v0, tStop) {
+  const W = 260, H = 172, L = 40, R = 8, T = 8, B = 30, pw = W - L - R, ph = H - T - B, vmax = 20, tmax = 8;
+  const X = t => L + pw * t / tmax, Y = v => T + ph * (1 - v / vmax);
+  let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Velocity versus time graph" ${SVGF}>`;
+  for (let i = 0; i <= 10; i++) {
+    const y = Y(i * 2);
+    s += `<line x1="${L}" y1="${y}" x2="${L + pw}" y2="${y}" stroke="${i ? "#c8c8c8" : "#222"}" stroke-width="${i ? .7 : 1.2}"/><text x="${L - 5}" y="${y + 3.5}" font-size="9" text-anchor="end">${i * 2}</text>`;
+  }
+  for (let i = 0; i <= 16; i++) {
+    const x = X(i / 2);
+    s += `<line x1="${x}" y1="${T}" x2="${x}" y2="${T + ph}" stroke="${i ? "#e0e0e0" : "#222"}" stroke-width="${i ? .6 : 1.2}"/>`;
+    if (i % 2 === 0) s += `<text x="${x}" y="${T + ph + 13}" font-size="9" text-anchor="middle">${i / 2}</text>`;
+  }
+  s += `<text x="${L + pw / 2}" y="${H - 3}" font-size="10" text-anchor="middle">Time (s)</text>`;
+  s += `<text transform="translate(11 ${T + ph / 2}) rotate(-90)" font-size="10" text-anchor="middle">Velocity (m/s)</text>`;
+  s += `<polyline points="${X(0)},${Y(v0)} ${X(tStop)},${Y(0)} ${X(tmax)},${Y(0)}" fill="none" stroke="#111" stroke-width="2"/>`;
+  return s + "</svg>";
+}
 
+
+</script>
+<script>/* ---- course.js ---- */
+/* =====================================================================
+   course.js: settings for the whole course, and saved blueprints.
+   Every unit inherits these. Edit this file to change course-wide rules.
+   ===================================================================== */
+"use strict";
+QB.setCourse({
+  name: "Physics",
+  g: 9.81,              // m/s², used by every unit
+  sigFigs: 3,           // given values and required answers
+  tolerancePct: 2,      // default answer tolerance (2–5 available in the app)
+  workSpace: 1,         // 0.8 compact, 1 standard, 1.3 roomy
+  pageBudget: 2,        // warn when a quiz runs longer than this
+  // Authoring rules for every unit (for whoever writes new question groups):
+  rules: [
+    "Equations are on a separate reference sheet. Do not print equations in question text unless the teacher asks.",
+    "Given values use the course's significant figures, and answers must be reported to the same.",
+    "Every numeric part has a work point (equation and substitution) and an answer point (value, sig figs, units).",
+  ],
+  // Blueprints shown in the "Start from a saved blueprint" menu. Save more from the app
+  // (Save button) and paste them here, or keep them as files in /blueprints.
+  presets: [
+    {
+      format: "physics-quiz-blueprint/1", name: "Unit 7 quiz (standard)", title: "Unit 7 Quiz: Friction",
+      pageBudget: 2, tolerancePct: 2, workSpace: 1,
+      items: [
+        { group: "U7-A1", count: 1, version: 1 }, { group: "U7-B2", count: 1, version: 1 },
+        { group: "U7-C2", count: 1, version: 1 }, { group: "U7-D2", count: 1, version: 1 },
+      ],
+    },
+    {
+      format: "physics-quiz-blueprint/1", name: "Unit 7 quiz (challenge)", title: "Unit 7 Quiz: Friction (Challenge)",
+      pageBudget: 2, tolerancePct: 2, workSpace: 1,
+      items: [
+        { group: "U7-B1", count: 1, version: 1 }, { group: "U7-D1", count: 1, version: 1 },
+        { group: "U7-D3", count: 1, version: 1 },
+      ],
+    },
+  ],
+});
+
+</script>
+<script>/* ---- units/unit-07-friction.js ---- */
+/* =====================================================================
+   units/unit-07-friction.js   (+Physics Unit 7: Friction)
+   Question bank for one unit. Everything is inside the function below,
+   so names like genA1 cannot collide with other units.
+   ===================================================================== */
+(() => {
+"use strict";
 /* ---------------- Question groups ----------------
-   lessons: [+Physics lesson number, lesson name, problems or section used] */
-const lessonShort = g => (g.lessons || []).map(l => l[0]).join(", ");
-const lessonLong = g => (g.lessons || []).map(l => `${l[0]} ${l[1]} (${l[2]})`).join("; ");
-const GROUPS = [
-  { id: "A1", tier: 1, title: "Compare N, μ, and f", desc: "Two cases differ in mass or surface", built: true, def: 1,
-    variants: ["mass-A", "mass-B", "surface-A", "surface-B"], gen: genA1, lessons: [["7.3", "Vocabulary and Concepts", "#11, #12"], ["7.2", "Inquiry", "Maximum Friction Force"]],
-    vlabels: { "mass-A": "Different masses (A heavier)", "mass-B": "Different masses (B heavier)", "surface-A": "Different surfaces (A rough)", "surface-B": "Different surfaces (B rough)" } },
-  { id: "A2", tier: 2, title: "Proportional reasoning", desc: "Scale mass or μ; predict f and a", built: true, def: 0,
-    variants: ["mass", "mu", "data"], gen: genA2, lessons: [["7.8", "Multiple Choice Challenge", "#1, #2"], ["7.2", "Inquiry", "Friction Force & Mass"]],
-    vlabels: { mass: "Different masses", mu: "Different μ", data: "Data table" } },
-  { id: "B1", tier: 1, title: "Static or kinetic?", desc: "Classify situations; friction graph shape", built: true, def: 0,
-    variants: ["classify", "stages"], gen: genB1, lessons: [["7.3", "Vocabulary and Concepts", "#13, #15"], ["7.8", "Multiple Choice Challenge", "#8"], ["7.2", "Inquiry", "Friction & Applied Force"]],
-    vlabels: { classify: "Classify situations", stages: "Stages of a push + graph" } },
-  { id: "B2", tier: 2, title: "Slide-or-not table", desc: "Increasing push; f and F_net for each", built: true, def: 1,
-    variants: ["push", "rope"], gen: genB2, lessons: [["7.4", "Free-Body Diagram Analysis", "#1, #2"], ["7.2", "Inquiry", "Friction & Applied Force"]],
-    vlabels: { push: "Pushed box", rope: "Crate pulled by rope" } },
-  { id: "C1", tier: 1, title: "Which μ can be found?", desc: "Conditions for measuring μs and μk", built: true, def: 0,
-    variants: ["v1", "v2", "v3", "v4"], gen: genC1, lessons: [["7.3", "Vocabulary and Concepts", "#14"], ["7.8", "Multiple Choice Challenge", "#5"]],
-    vlabels: { v1: "Scenario set 1", v2: "Scenario set 2", v3: "Scenario set 3", v4: "Scenario set 4" } },
-  { id: "C2", tier: 2, title: "Measure μs and μk", desc: "From forces or a force–time graph", built: true, def: 1,
-    variants: ["threshold", "graph"], gen: genC2, lessons: [["7.6", "Complete Problems 2", "#1, #2"], ["7.8", "Multiple Choice Challenge", "#6, #7"]],
-    vlabels: { threshold: "From measured forces", graph: "From a force–time graph" } },
-  { id: "D1", tier: 2, title: "Net-force reasoning", desc: "Multiple choice with justification", built: true, def: 0,
-    variants: ["triple+photos", "photos+info", "info+triple"], gen: genD1, lessons: [["7.8", "Multiple Choice Challenge", "#3, #4, #11"]],
-    vlabels: { "triple+photos": "Bigger push + photo strip", "photos+info": "Photo strip + which info", "info+triple": "Which info + bigger push" } },
-  { id: "D2", tier: 2, title: "Pushed box: complete problem", desc: "Does it slide? Then f, F_net, a", built: true, def: 1,
-    variants: ["push-slide", "push-rest", "rope-slide", "rope-rest", "sled-slide", "sled-rest"], gen: genD2, lessons: [["7.5", "Complete Problems 1", "#1"]],
-    vlabels: { "push-slide": "Push, slides", "push-rest": "Push, stays at rest", "rope-slide": "Rope, slides", "rope-rest": "Rope, stays at rest", "sled-slide": "Sled, slides", "sled-rest": "Sled, stays at rest" },
-    arrange: rng => {
-      const ctx = rng.shuffle(["push", "rope", "sled"]); const r0 = rng.next() < .5 ? ["slide", "rest"] : ["rest", "slide"];
-      return [0, 1, 2, 3, 4, 5].map(i => `${ctx[i % 3]}-${r0[i % 2]}`);
-    } },
-  { id: "D3", tier: 3, title: "Friction as the driving force", desc: "Max braking with drag; box on a truck", built: true, def: 0,
-    variants: ["bike", "skid", "truck-accel", "truck-brake"], gen: genD3, lessons: [["7.5", "Complete Problems 1", "#2, #3"]],
-    vlabels: { bike: "Braking, no skid", skid: "Braking, skidding", "truck-accel": "Truck speeding up", "truck-brake": "Truck slowing down" } },
-  { id: "D4", tier: 3, title: "Opposing forces", desc: "Friction direction changes", built: true, def: 0,
-    variants: ["students", "movers"], gen: genD4, lessons: [["7.7", "Challenge", "#1"]],
-    vlabels: { students: "Two students, block", movers: "Two movers, crate" } },
-  { id: "E1", tier: 3, title: "Skidding to a stop", desc: "μk, a, and kinematics", built: true, def: 0,
-    variants: ["distance", "marks", "graph"], gen: genE1, lessons: [["7.8", "Multiple Choice Challenge", "#9"], ["7.1", "Review", "#1"]],
-    vlabels: { distance: "Find stopping distance", marks: "Find μk from skid marks", graph: "Find μk from a v–t graph" } },
-];
+   Each group: id (unique within the unit), tier, title, desc, objective, minutes (estimated),
+   version (bump whenever the generator changes what students see or the answers),
+   def (default count), variants, gen, lessons: [+Physics lesson, name, problems used],
+   vlabels (preview names), optional arrange (seat-balancing order), optional tags. */
+
 
 /* ----- A1: compare cases ----- */
 function genA1(rng, variant) {
@@ -706,113 +892,6 @@ function genD2(rng, variant) {
   const givens = { m: { value: m, unit: "kg" }, g: { value: G, unit: "m/s^2" }, F_A: { value: F, unit: "N" }, mu_s: { value: mus, unit: "" }, mu_k: { value: muk, unit: "" } };
   if (F2) givens.F_A2 = { value: F2, unit: "N" };
   return { html, statement, givens, spec, summary: `${ctx}, ${regime === "slide" ? "slides" : "stays at rest"}; μs ${fmt3(mus)}, μk ${fmt3(muk)}` };
-}
-
-/* ---------------- Helpers for the newer groups ---------------- */
-function mcBlock(p, layout = "col") {
-  return `<div class="mc" data-tag="${p.tag}"><div class="mcq"><b>(${p.tag})</b> ${p.prompt} ${tagSpan(p.tag)}${p.multi ? ` <small class="sans" style="color:#888">(mark ${p.multi})</small>` : ""}</div>
-    <div class="mco ${layout}">${p.options.map(cbOpt).join("")}</div></div>`;
-}
-function explainBlock(p, n = 2) {
-  return `<div class="mc"><div class="mcq"><b>(${p.tag})</b> ${p.prompt} ${tagSpan(p.tag)}</div><div class="lines" data-tag="${p.tag}">${"<div></div>".repeat(n)}</div></div>`;
-}
-function choiceRows(spec) {
-  return `<table class="cmp">${spec.map(p => `<tr data-tag="${p.tag}"><td>(${p.tag}) ${p.prompt}</td><td class="opts">${tagSpan(p.tag)}&nbsp; ${p.options.map(cbOpt).join("")}</td></tr>`).join("")}</table>`;
-}
-const explain = (tag, prompt, model, ideas, fill) => ({ tag, type: "explanation", prompt, model, ideas, fill, pts: { explanation: 2 } });
-const multiChoice = (tag, prompt, options, answers) => ({ tag, type: "choice", prompt, options, answer: answers, multi: answers.length, pts: { answer: 1 } });
-const FRC = (force, label, direction) => ({ force, symbol: label, label, direction });
-const fmtK = k => ({ 0.5: "half", [1 / 3]: "one-third", 2: "twice", 3: "three times" }[k]);
-
-/* ---- figures ---- */
-const SVGF = `font-family="Avenir Next,Segoe UI,Arial,sans-serif"`;
-function motionArrow(x, y, label = "v") { return arrow(x, y, x + 34, y, label, x + 12, y - 5); }
-function bikeSVG(opts = {}) {
-  const W = 170, H = 94, gy = H - 10;
-  let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bicyclist">`;
-  s += ground(6, W - 6, gy, false);
-  const r = 14, x1 = 48, x2 = 104, wy = gy - r;
-  const seat = [x1 + 24, wy - 24], bar = [x2 - 4, wy - 30], sh = [x1 + 40, wy - 46];
-  s += `<g stroke="#222" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="${x1}" cy="${wy}" r="${r}"/><circle cx="${x2}" cy="${wy}" r="${r}"/>
-    <path d="M${x1} ${wy} L${x1 + 28} ${wy} L${seat[0]} ${seat[1]} L${x2 - 8} ${wy - 24} L${x2} ${wy} M${x1 + 28} ${wy} L${x2 - 8} ${wy - 24} M${x1} ${wy} L${seat[0]} ${seat[1]} M${x2 - 8} ${wy - 24} L${bar[0]} ${bar[1]} M${seat[0] - 5} ${seat[1]} h10"/>
-    <path d="M${seat[0]} ${seat[1] - 2} L${sh[0]} ${sh[1]} L${bar[0]} ${bar[1]} M${seat[0]} ${seat[1] - 2} L${x1 + 36} ${wy - 12} L${x1 + 30} ${wy}"/>
-    <circle cx="${sh[0] + 5}" cy="${sh[1] - 8}" r="5.5" fill="#fff"/></g>`;
-  s += motionArrow(W - 50, 18, "v");
-  if (opts.skid) s += `<path d="M${x2 + 14} ${gy - 1} h28 M${x1 - 40} ${gy - 1} h22" stroke="#555" stroke-width="2.4"/>`;
-  return s + "</svg>";
-}
-function truckSVG(dir = "right") {
-  const W = 240, H = 92, gy = H - 8;
-  let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Box on a truck bed">`;
-  s += ground(6, W - 6, gy, false);
-  s += `<g stroke="#222" stroke-width="1.3">
-    <rect x="22" y="${gy - 34}" width="132" height="8" fill="#e4e4e4"/>
-    <rect x="22" y="${gy - 26}" width="178" height="12" fill="#f4f4f4"/>
-    <path d="M154 ${gy - 26} V${gy - 62} H184 L200 ${gy - 42} V${gy - 26} Z" fill="#f4f4f4"/>
-    <rect x="160" y="${gy - 56}" width="20" height="14" fill="#fff"/>
-    <rect x="66" y="${gy - 62}" width="30" height="28" fill="#e4e4e4"/>
-    <circle cx="52" cy="${gy - 10}" r="10" fill="#fff"/><circle cx="174" cy="${gy - 10}" r="10" fill="#fff"/></g>`;
-  s += motionArrow(176, 12, "v");
-  return s + "</svg>";
-}
-function tugSVG() {
-  const W = 300, H = 74, gy = H - 12, bx = 132, bw = 36, bh = 34;
-  let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Block pulled from both sides">`;
-  s += ground(6, W - 6, gy, false);
-  s += `<rect x="${bx}" y="${gy - bh}" width="${bw}" height="${bh}" fill="#e4e4e4" stroke="#222" stroke-width="1.2"/>`;
-  const ry = gy - 20, hx = bx + bw + 74;
-  const right = `<line x1="${bx + bw}" y1="${ry}" x2="${hx}" y2="${ry}" stroke="#222" stroke-width="1.1"/>${puller(hx, ry, gy)}`;
-  s += right + `<g transform="translate(${2 * bx + bw} 0) scale(-1 1)">${right}</g>`;
-  s += `<text x="${bx - 56}" y="${ry - 5}" ${SVGF} font-size="10">T<tspan baseline-shift="sub" font-size="7">L</tspan></text><text x="${bx + bw + 46}" y="${ry - 5}" ${SVGF} font-size="10">T<tspan baseline-shift="sub" font-size="7">R</tspan></text>`;
-  return s + "</svg>";
-}
-function photoStripSVG(kind) {
-  const W = 400, H = 62, gy = 52;
-  const gaps = [0, 1, 2, 3, 4, 5].map(i => kind === "constant" ? 55 : kind === "speeding" ? 32 + i * 9.5 : 79.5 - i * 9.5);
-  let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Photo strip of a pushed box">`;
-  s += ground(4, W - 4, gy, false);
-  let x = 26;
-  for (let i = 0; i < 7; i++) {
-    s += `<rect x="${x}" y="${gy - 15}" width="15" height="15" fill="#e4e4e4" stroke="#222" stroke-width="1"/>
-      <g stroke="#222" stroke-width="1" fill="none"><circle cx="${x - 9}" cy="${gy - 26}" r="3.2" fill="#fff"/>
-      <path d="M${x - 10} ${gy - 22} L${x - 13} ${gy - 11} L${x - 19} ${gy} M${x - 13} ${gy - 11} L${x - 8} ${gy} M${x - 11} ${gy - 19} L${x} ${gy - 16}"/></g>`;
-    if (i < 6) x += gaps[i];
-  }
-  return s + "</svg>";
-}
-function miniGraphSVG(kind) {
-  const W = 128, H = 96, L = 20, B = 18, T = 6, R = 6, pw = W - L - R, ph = H - T - B;
-  const X = u => L + pw * u, Y = v => T + ph * (1 - v);
-  const pts = {
-    correct: [[0, 0], [.55, .8], [.56, .55], [1, .55]],
-    nodrop: [[0, 0], [.55, .8], [1, .8]],
-    linear: [[0, 0], [1, .95]],
-    tozero: [[0, 0], [.55, .8], [.56, 0], [1, 0]],
-  }[kind];
-  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Friction versus applied force graph">
-    <line x1="${L}" y1="${T}" x2="${L}" y2="${T + ph}" stroke="#222"/><line x1="${L}" y1="${T + ph}" x2="${L + pw}" y2="${T + ph}" stroke="#222"/>
-    <text transform="translate(12 ${T + ph / 2}) rotate(-90)" ${SVGF} font-size="8.5" text-anchor="middle">Friction</text>
-    <text x="${L + pw / 2}" y="${H - 4}" ${SVGF} font-size="8.5" text-anchor="middle">Applied force</text>
-    <polyline points="${pts.map(([u, v]) => `${X(u)},${Y(v)}`).join(" ")}" fill="none" stroke="#111" stroke-width="2"/></svg>`;
-}
-function vtGraphSVG(v0, tStop) {
-  const W = 260, H = 172, L = 40, R = 8, T = 8, B = 30, pw = W - L - R, ph = H - T - B, vmax = 20, tmax = 8;
-  const X = t => L + pw * t / tmax, Y = v => T + ph * (1 - v / vmax);
-  let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Velocity versus time graph" ${SVGF}>`;
-  for (let i = 0; i <= 10; i++) {
-    const y = Y(i * 2);
-    s += `<line x1="${L}" y1="${y}" x2="${L + pw}" y2="${y}" stroke="${i ? "#c8c8c8" : "#222"}" stroke-width="${i ? .7 : 1.2}"/><text x="${L - 5}" y="${y + 3.5}" font-size="9" text-anchor="end">${i * 2}</text>`;
-  }
-  for (let i = 0; i <= 16; i++) {
-    const x = X(i / 2);
-    s += `<line x1="${x}" y1="${T}" x2="${x}" y2="${T + ph}" stroke="${i ? "#e0e0e0" : "#222"}" stroke-width="${i ? .6 : 1.2}"/>`;
-    if (i % 2 === 0) s += `<text x="${x}" y="${T + ph + 13}" font-size="9" text-anchor="middle">${i / 2}</text>`;
-  }
-  s += `<text x="${L + pw / 2}" y="${H - 3}" font-size="10" text-anchor="middle">Time (s)</text>`;
-  s += `<text transform="translate(11 ${T + ph / 2}) rotate(-90)" font-size="10" text-anchor="middle">Velocity (m/s)</text>`;
-  s += `<polyline points="${X(0)},${Y(v0)} ${X(tStop)},${Y(0)} ${X(tmax)},${Y(0)}" fill="none" stroke="#111" stroke-width="2"/>`;
-  return s + "</svg>";
 }
 
 /* ----- A2: proportional reasoning ----- */
@@ -1133,6 +1212,66 @@ function genE1(rng, variant) {
   return { html, statement, givens, spec, summary: `skid marks ${fmt3(d)} m from ${fmt3(v0)} m/s → μk ${fmt3(m * aR / N)}` };
 }
 
+const groups = [
+  { id: "A1", tier: 1, version: 1, minutes: 4, objective: "Explain how mass and surface affect the normal force, the coefficient of friction, and the friction force.", title: "Compare N, μ, and f", desc: "Two cases differ in mass or surface", def: 1,
+    variants: ["mass-A", "mass-B", "surface-A", "surface-B"], gen: genA1, lessons: [["7.3", "Vocabulary and Concepts", "#11, #12"], ["7.2", "Inquiry", "Maximum Friction Force"]],
+    vlabels: { "mass-A": "Different masses (A heavier)", "mass-B": "Different masses (B heavier)", "surface-A": "Different surfaces (A rough)", "surface-B": "Different surfaces (B rough)" } },
+  { id: "A2", tier: 2, version: 1, minutes: 7, objective: "Use proportional reasoning to predict how friction and acceleration change when mass or μ changes, and identify a proportional relationship from data.", title: "Proportional reasoning", desc: "Scale mass or μ; predict f and a", def: 0,
+    variants: ["mass", "mu", "data"], gen: genA2, lessons: [["7.8", "Multiple Choice Challenge", "#1, #2"], ["7.2", "Inquiry", "Friction Force & Mass"]],
+    vlabels: { mass: "Different masses", mu: "Different μ", data: "Data table" } },
+  { id: "B1", tier: 1, version: 1, minutes: 4, objective: "Distinguish static from kinetic friction and describe how friction responds as an applied force increases.", title: "Static or kinetic?", desc: "Classify situations; friction graph shape", def: 0,
+    variants: ["classify", "stages"], gen: genB1, lessons: [["7.3", "Vocabulary and Concepts", "#13, #15"], ["7.8", "Multiple Choice Challenge", "#8"], ["7.2", "Inquiry", "Friction & Applied Force"]],
+    vlabels: { classify: "Classify situations", stages: "Stages of a push + graph" } },
+  { id: "B2", tier: 2, version: 1, minutes: 9, objective: "Decide whether an object slides and find the friction and net force for a range of applied forces.", title: "Slide-or-not table", desc: "Increasing push; f and F_net for each", def: 1,
+    variants: ["push", "rope"], gen: genB2, lessons: [["7.4", "Free-Body Diagram Analysis", "#1, #2"], ["7.2", "Inquiry", "Friction & Applied Force"]],
+    vlabels: { push: "Pushed box", rope: "Crate pulled by rope" } },
+  { id: "C1", tier: 1, version: 1, minutes: 4, objective: "Identify which coefficient of friction a measurement can determine, and at what moment.", title: "Which μ can be found?", desc: "Conditions for measuring μs and μk", def: 0,
+    variants: ["v1", "v2", "v3", "v4"], gen: genC1, lessons: [["7.3", "Vocabulary and Concepts", "#14"], ["7.8", "Multiple Choice Challenge", "#5"]],
+    vlabels: { v1: "Scenario set 1", v2: "Scenario set 2", v3: "Scenario set 3", v4: "Scenario set 4" } },
+  { id: "C2", tier: 2, version: 1, minutes: 8, objective: "Calculate μs and μk from threshold and constant-speed forces or from a force–time graph.", title: "Measure μs and μk", desc: "From forces or a force–time graph", def: 1,
+    variants: ["threshold", "graph"], gen: genC2, lessons: [["7.6", "Complete Problems 2", "#1, #2"], ["7.8", "Multiple Choice Challenge", "#6, #7"]],
+    vlabels: { threshold: "From measured forces", graph: "From a force–time graph" } },
+  { id: "D1", tier: 2, version: 1, minutes: 7, objective: "Reason about net force with friction in multiple-choice situations and justify the choice.", title: "Net-force reasoning", desc: "Multiple choice with justification", def: 0,
+    variants: ["triple+photos", "photos+info", "info+triple"], gen: genD1, lessons: [["7.8", "Multiple Choice Challenge", "#3, #4, #11"]],
+    vlabels: { "triple+photos": "Bigger push + photo strip", "photos+info": "Photo strip + which info", "info+triple": "Which info + bigger push" } },
+  { id: "D2", tier: 2, version: 1, minutes: 9, objective: "Solve a complete friction problem: decide whether the object slides, then find friction, net force, and acceleration.", title: "Pushed box: complete problem", desc: "Does it slide? Then f, F_net, a", def: 1,
+    variants: ["push-slide", "push-rest", "rope-slide", "rope-rest", "sled-slide", "sled-rest"], gen: genD2, lessons: [["7.5", "Complete Problems 1", "#1"]],
+    vlabels: { "push-slide": "Push, slides", "push-rest": "Push, stays at rest", "rope-slide": "Rope, slides", "rope-rest": "Rope, stays at rest", "sled-slide": "Sled, slides", "sled-rest": "Sled, stays at rest" },
+    arrange: rng => {
+      const ctx = rng.shuffle(["push", "rope", "sled"]); const r0 = rng.next() < .5 ? ["slide", "rest"] : ["rest", "slide"];
+      return [0, 1, 2, 3, 4, 5].map(i => `${ctx[i % 3]}-${r0[i % 2]}`);
+    } },
+  { id: "D3", tier: 3, version: 1, minutes: 12, objective: "Apply friction as the force that stops or accelerates an object, using the maximum static friction as a limit.", title: "Friction as the driving force", desc: "Max braking with drag; box on a truck", def: 0,
+    variants: ["bike", "skid", "truck-accel", "truck-brake"], gen: genD3, lessons: [["7.5", "Complete Problems 1", "#2, #3"]],
+    vlabels: { bike: "Braking, no skid", skid: "Braking, skidding", "truck-accel": "Truck speeding up", "truck-brake": "Truck slowing down" } },
+  { id: "D4", tier: 3, version: 1, minutes: 12, objective: "Determine whether an object slides, and the direction of friction, when opposing forces act.", title: "Opposing forces", desc: "Friction direction changes", def: 0,
+    variants: ["students", "movers"], gen: genD4, lessons: [["7.7", "Challenge", "#1"]],
+    vlabels: { students: "Two students, block", movers: "Two movers, crate" } },
+  { id: "E1", tier: 3, version: 1, minutes: 11, objective: "Connect kinetic friction to stopping motion using Newton’s second law and kinematics.", tags: ['kinematics'], title: "Skidding to a stop", desc: "μk, a, and kinematics", def: 0,
+    variants: ["distance", "marks", "graph"], gen: genE1, lessons: [["7.8", "Multiple Choice Challenge", "#9"], ["7.1", "Review", "#1"]],
+    vlabels: { distance: "Find stopping distance", marks: "Find μk from skid marks", graph: "Find μk from a v–t graph" } },
+];
+
+QB.registerUnit({
+  id: "U7", number: 7, title: "Friction", version: "1.0",
+  source: "+Physics Unit 7",
+  lessons: {
+    "7.1": "Review", "7.2": "Inquiry", "7.3": "Vocabulary and Concepts", "7.4": "Free-Body Diagram Analysis",
+    "7.5": "Complete Problems 1", "7.6": "Complete Problems 2", "7.7": "Challenge", "7.8": "Multiple Choice Challenge",
+  },
+  groups,
+});
+})();
+
+</script>
+<script>/* ---- engine/app.js ---- */
+/* =====================================================================
+   engine/app.js
+   The app: roster, blueprint panel, quiz assembly and pagination, printed
+   and JSON answer keys, the preview window, and the filled-in sample.
+   Nothing in here is specific to one unit.
+   ===================================================================== */
+"use strict";
 /* ---------------- Roster ---------------- */
 let roster = [];
 function parseCSV(text) {
@@ -1205,32 +1344,84 @@ function setRoster(r, src) {
     : `No students found in ${src}. Check that it has a Name or First/Last column.`;
 }
 
-/* ---------------- Blueprint UI ---------------- */
+/* ---------------- Blueprint UI ----------------
+   A blueprint is a saved quiz or exam layout: which groups, how many of each, and
+   settings. Unit quizzes, midterms and finals are all blueprints. */
 function renderBlueprint() {
-  document.getElementById("blueprint").innerHTML = GROUPS.map(g => `<tr class="${g.built ? "" : "off"}"><td class="id">${g.id}</td>
-    <td>${g.title}<span class="desc">${g.desc}</span><span class="desc lsn">+Physics ${lessonShort(g)}</span><button type="button" class="pv" data-pv="${g.id}" aria-label="Preview ${g.id}">Preview</button></td><td class="t">Tier ${g.tier}</td>
-    <td class="n"><input type="number" min="0" max="3" value="${g.built ? g.def : 0}" ${g.built ? "" : "disabled"} data-g="${g.id}" aria-label="Questions from ${g.id}"></td></tr>`).join("");
+  document.getElementById("blueprint").innerHTML = QB.units.map(u => `<details class="unit" open data-unit="${u.id}">
+    <summary><b>Unit ${u.number}: ${esc(u.title)}</b> <span class="ucount"></span></summary>
+    <table class="bp">${u.groups.map(g => `<tr><td class="id">${g.id}</td>
+      <td>${g.title}<span class="desc">${g.desc}</span><span class="desc lsn">+Physics ${lessonShort(g)} · about ${g.minutes} min</span><button type="button" class="pv" data-pv="${g.uid}" aria-label="Preview ${g.uid}">Preview</button></td><td class="t">Tier ${g.tier}</td>
+      <td class="n"><input type="number" min="0" max="5" value="0" data-g="${g.uid}" aria-label="Questions from ${g.uid}"></td></tr>`).join("")}</table></details>`).join("");
 }
 function readBlueprint() {
   const bp = {};
-  document.querySelectorAll("#blueprint input").forEach(i => bp[i.dataset.g] = Math.max(0, Math.min(3, parseInt(i.value, 10) || 0)));
+  document.querySelectorAll("#blueprint input[data-g]").forEach(i => { const n = Math.max(0, Math.min(5, parseInt(i.value, 10) || 0)); if (n) bp[i.dataset.g] = n; });
   return bp;
+}
+const ptsCache = {};
+function groupPoints(g) { // points for one question from the group (sampled once)
+  if (ptsCache[g.uid] === undefined) { const q = g.gen(makeRng(`pts|${g.uid}`), g.variants[0]); ptsCache[g.uid] = q.spec.reduce((a, p) => a + ptsOf(p), 0); }
+  return ptsCache[g.uid];
+}
+function currentBlueprint() {
+  const items = Object.entries(readBlueprint()).map(([group, count]) => ({ group, count, version: QB.byUid[group].version }));
+  return {
+    format: QB.BLUEPRINT_FORMAT, name: document.getElementById("title").value.trim() || "Quiz",
+    title: document.getElementById("title").value.trim() || "Quiz",
+    pageBudget: parseInt(document.getElementById("pageBudget").value, 10) || QB.course.pageBudget,
+    tolerancePct: parseFloat(document.getElementById("tol").value),
+    workSpace: parseFloat(document.getElementById("work").value),
+    items,
+  };
+}
+function applyBlueprint(bp) {
+  const missing = [];
+  document.querySelectorAll("#blueprint input[data-g]").forEach(i => i.value = 0);
+  for (const it of bp.items || []) {
+    const inp = document.querySelector(`#blueprint input[data-g="${it.group}"]`);
+    if (inp) inp.value = it.count; else missing.push(it.group);
+  }
+  if (bp.title) document.getElementById("title").value = bp.title;
+  if (bp.pageBudget) document.getElementById("pageBudget").value = bp.pageBudget;
+  if (bp.tolerancePct) document.getElementById("tol").value = String(bp.tolerancePct);
+  if (bp.workSpace) document.getElementById("work").value = String(bp.workSpace);
+  updateSummary();
+  const changed = (bp.items || []).filter(it => QB.byUid[it.group] && it.version && it.version !== QB.byUid[it.group].version).map(it => it.group);
+  const msg = [];
+  if (missing.length) msg.push(`This blueprint uses groups that aren’t in the question bank: ${missing.join(", ")}.`);
+  if (changed.length) msg.push(`These groups have changed since the blueprint was saved: ${changed.join(", ")}. New quizzes will use the current versions.`);
+  document.getElementById("bpMsg").textContent = msg.join(" ");
+}
+function updateSummary() {
+  const bp = readBlueprint();
+  let n = 0, pts = 0, mins = 0;
+  for (const [uid, c] of Object.entries(bp)) { const g = QB.byUid[uid]; n += c; pts += c * groupPoints(g); mins += c * g.minutes; }
+  document.getElementById("bpSummary").textContent = n ? `${n} question${n === 1 ? "" : "s"} · ${pts} points · about ${mins} minutes` : "No questions selected yet.";
+  document.querySelectorAll("#blueprint details.unit").forEach(d => {
+    const c = [...d.querySelectorAll("input[data-g]")].reduce((a, i) => a + (parseInt(i.value, 10) || 0), 0);
+    d.querySelector(".ucount").textContent = c ? `${c} selected` : "";
+  });
+}
+function renderPresets() {
+  const sel = document.getElementById("preset");
+  sel.innerHTML = `<option value="">Choose a saved blueprint…</option>` + QB.course.presets.map((p, i) => `<option value="${i}">${esc(p.name)}</option>`).join("");
 }
 
 /* ---------------- Assembly ---------------- */
 function buildQuestions(student, S) {
   const qs = [], sKey = student.name.trim().toLowerCase();
-  for (const g of GROUPS) {
-    const count = g.built ? (S.bp[g.id] || 0) : 0;
+  for (const g of QB.groups) {
+    const count = S.bp[g.uid] || 0;
     if (!count) continue;
-    const trng = makeRng(`${S.quizId}|table|${student.group}|${g.id}`);
+    const trng = makeRng(`${S.quizId}|table|${student.group}|${g.uid}`);
     const order = g.arrange ? g.arrange(trng) : trng.shuffle(g.variants.slice());
     const si = student.seatIdx >= 0 ? student.seatIdx : cyrb53(sKey) % order.length;
     for (let k = 0; k < count; k++) {
       const variant = order[(si * count + k) % order.length];
-      const q = g.gen(makeRng(`${S.quizId}|${sKey}|${g.id}|${k}`), variant);
+      const q = g.gen(makeRng(`${S.quizId}|${sKey}|${g.uid}|${k}`), variant);
       q.pts = q.spec.reduce((a, p) => a + ptsOf(p), 0);
-      Object.assign(q, { gid: g.id, tier: g.tier, variant });
+      Object.assign(q, { gid: g.uid, group: g, tier: g.tier, variant });
       qs.push(q);
     }
   }
@@ -1302,7 +1493,10 @@ function generate() {
     date: document.getElementById("date").value,
     tol: parseFloat(document.getElementById("tol").value) / 100,
     bp: readBlueprint(),
+    pageBudget: parseInt(document.getElementById("pageBudget").value, 10) || QB.course.pageBudget,
+    blueprint: currentBlueprint(),
   };
+  if (!Object.keys(S.bp).length) { document.getElementById("warn").textContent = "Choose at least one question group first."; return; }
   currentWork = parseFloat(document.getElementById("work").value);
   const qStage = document.getElementById("quizStage"), kStage = document.getElementById("keyStage");
   qStage.innerHTML = ""; kStage.innerHTML = "";
@@ -1321,7 +1515,7 @@ function generate() {
     const header = n => n === 0
       ? el(`<div class="qhead"><div class="title"><b>${esc(S.title)}</b></div>
           <div class="who"><div><small>Name</small>${esc(st.name)}</div><div><small>Seat</small>${esc(seatTxt)}</div><div><small>Date</small>${esc(dateTxt)}</div><div><small>Score</small>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/ ${total}</div></div>
-          <div class="instr">Show all work: a free-body diagram, the given and unknown values, the equation, and your substitution. Report answers to 3 significant figures, with units in the Units box. Use g = 9.81 m/s². Mark boxes with an X.</div></div>`)
+          <div class="instr">Show all work: a free-body diagram, the given and unknown values, the equation, and your substitution. Report answers to ${SF()} significant figures, with units in the Units box. Use g = 9.81 m/s². Mark boxes with an X.</div></div>`)
       : el(`<div class="qhead2"><span>${esc(st.name)}, seat ${esc(seatTxt)}</span><span>${esc(S.title)}</span></div>`);
     const { pages, tooTall } = paginate(qStage, items, header, true);
     const pageOf = new Map();
@@ -1338,7 +1532,7 @@ function generate() {
       qStage.insertAdjacentHTML("beforeend", `<div class="page blank"><div class="blanknote">This page is intentionally blank.</div>${qrSVG(`PQ1|${S.quizId}|${code}|blank`)}<div class="page-foot"><span>Quiz code <b>${code}</b></span><span>Back of page ${nContent}</span></div></div>`);
     }
     if (tooTall) tall.push(st.name);
-    if (nContent > 2) over.push(`${st.name} (${nContent})`);
+    if (nContent > S.pageBudget) over.push(`${st.name} (${nContent})`);
     totalPages += nContent + (nContent % 2);
     keyItems.push(keyBlock(st, seatTxt, code, total, ordered, S));
     keyStudents.push(studentKeyJSON(st, seatTxt, code, total, ordered, placed.map(q => pageOf.get(+q.dataset.i)), nContent, S));
@@ -1352,7 +1546,7 @@ function generate() {
   setView(wasKey ? "key" : "quiz");
   document.getElementById("summary").textContent = `${keyStudents.length} quizzes, ${totalPages} printed pages`;
   const w = [];
-  if (over.length) w.push(`These quizzes run longer than 2 pages: ${over.join(", ")}. Try Compact work space or fewer questions.`);
+  if (over.length) w.push(`These quizzes run longer than the ${S.pageBudget}-page budget: ${over.join(", ")}. Try Compact work space or fewer questions.`);
   if (tall.length) w.push(`A single question is taller than a page for ${tall.length} student(s); switch to Compact work space.`);
   const dupN = [...names].filter(([, c]) => c > 1).map(([n]) => n);
   if (dupN.length) w.push(`Duplicate names in the roster (${dupN.join(", ")}) get identical quizzes and codes. Add a middle initial to tell them apart.`);
@@ -1416,7 +1610,8 @@ function studentKeyJSON(st, seatTxt, code, total, qs, pages, nContent, S) {
     code, name: st.name, group: st.group || null, seat: st.seat || null, seat_label: seatTxt,
     content_pages: nContent, printed_pages: nContent + (nContent % 2), total_points: total,
     questions: qs.map((q, i) => ({
-      number: i + 1, id: `Q${i + 1}`, group: q.gid, tier: q.tier, physics_plus_lessons: (GROUPS.find(g => g.id === q.gid).lessons || []).map(l => `${l[0]} ${l[1]}`), variant: q.variant, page: pages[i], points: q.pts,
+      number: i + 1, id: `Q${i + 1}`, group: q.gid, group_version: q.group.version, unit: `Unit ${q.group.unit.number}: ${q.group.unit.title}`,
+      tier: q.tier, objective: q.group.objective, physics_plus_lessons: (q.group.lessons || []).map(l => `${l[0]} ${l[1]}`), variant: q.variant, page: pages[i], points: q.pts,
       statement: plain(q.statement), givens: q.givens, parts: q.spec.map(p => partJSON(p, i + 1, S.tol)),
     })),
   };
@@ -1424,10 +1619,12 @@ function studentKeyJSON(st, seatTxt, code, total, qs, pages, nContent, S) {
 function keyJSON(S, students) {
   return {
     format: KEY_FORMAT,
-    quiz: { id: S.quizId, title: S.title, date: S.date || null, generated: new Date().toISOString(), g: G, sig_figs: 3, tolerance_pct: Math.round(S.tol * 100) },
+    quiz: { id: S.quizId, title: S.title, date: S.date || null, generated: new Date().toISOString(), course: QB.course.name, g: G, sig_figs: SF(), tolerance_pct: Math.round(S.tol * 100),
+      engine_version: QB.ENGINE_VERSION, units: Object.fromEntries(QB.units.map(u => [u.id, u.version])), blueprint: S.blueprint },
     conventions: {
       student_id: "Each page footer prints 'Quiz code XXXXX' and 'Page i of n'. The code uses only the letters ACDEFHJKMNPRTUVWXY and digits 3479.",
       qr_code: "Top-right QR on every page encodes PQ1|<quiz id>|<code>|<page>/<content pages>, or ...|blank on the padding page.",
+      group_ids: "Group ids are <unit>-<group>, e.g. U7-D2 is Unit 7, group D2. group_version identifies the generator version used.",
       part_ids: "Part id Q<question number><tag>. The answer cell shows the printed_tag in small gray text, e.g. '2c'. 'gu' is the Given/Unknown box, 'a' is usually the free-body diagram, 'd1'...'d5' are table rows.",
       expr: "expr gives how a value is computed from givens (by symbol) and earlier parts (by part id). Use it for error carried forward: substitute the student's own values for the parts in depends_on.",
       points: "points lists each scoring criterion and its value. work = correct equation AND substitution shown; answer = value within accept_range (or consistent with carried-forward values), 3 significant figures, correct units.",
@@ -1439,29 +1636,23 @@ function keyJSON(S, students) {
 /* ---------------- Preview ---------------- */
 const PV = { g: null, variant: null, seed: 1 };
 function openPreview(id) {
-  const g = GROUPS.find(x => x.id === id);
-  PV.g = g; PV.variant = g.built ? g.variants[0] : null; PV.seed = 1;
-  document.getElementById("pvTitle").textContent = `${g.id}: ${g.title}`;
-  document.getElementById("pvSub").textContent = `Tier ${g.tier}. ${g.desc}.${g.lessons ? ` +Physics lessons: ${lessonLong(g)}.` : ""}${g.built ? ` ${g.variants.length} versions; students at the same table get different ones.` : ""}`;
-  document.getElementById("pvCtl").hidden = !g.built;
-  document.getElementById("pvVars").innerHTML = g.built
-    ? g.variants.map(v => `<button type="button" data-v="${v}" aria-pressed="${v === PV.variant}">${(g.vlabels && g.vlabels[v]) || v}</button>`).join("") : "";
+  const g = QB.byUid[id];
+  PV.g = g; PV.variant = g.variants[0]; PV.seed = 1;
+  document.getElementById("pvTitle").textContent = `${g.uid}: ${g.title}`;
+  document.getElementById("pvSub").textContent = `Unit ${g.unit.number}: ${g.unit.title}. Tier ${g.tier}, about ${g.minutes} minutes. Objective: ${g.objective}${g.lessons ? ` +Physics lessons: ${lessonLong(g)}.` : ""} ${g.variants.length} versions; students at the same table get different ones.`;
+  document.getElementById("pvVars").innerHTML = g.variants.map(v => `<button type="button" data-v="${v}" aria-pressed="${v === PV.variant}">${(g.vlabels && g.vlabels[v]) || v}</button>`).join("");
   renderPreview();
   const d = document.getElementById("pvDlg");
   if (!d.open) d.showModal();
 }
 function renderPreview() {
   const g = PV.g, body = document.getElementById("pvBody");
-  if (!g.built) {
-    body.innerHTML = `<div class="pv-plan"><h4>Not built yet</h4><p>${g.plan || g.desc}</p>${g.lessons ? `<p>+Physics lessons: ${lessonLong(g)}.</p>` : ""}</div>`;
-    return;
-  }
   document.querySelectorAll("#pvVars button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === PV.variant));
-  const q = g.gen(makeRng(`preview|${g.id}|${PV.variant}|${PV.seed}`), PV.variant);
-  q.pts = q.spec.reduce((a, p) => a + ptsOf(p), 0); q.gid = g.id;
+  const q = g.gen(makeRng(`preview|${g.uid}|${PV.variant}|${PV.seed}`), PV.variant);
+  q.pts = q.spec.reduce((a, p) => a + ptsOf(p), 0); q.gid = g.uid;
   const tol = parseFloat(document.getElementById("tol").value) / 100;
   const work = parseFloat(document.getElementById("work").value);
-  let html = `<div class="page paper-preview" style="--work:${work}"><div class="q"><div class="gut"><b class="qnum">1</b><small>${q.pts} pts</small><i>${g.id}</i></div>${q.html}</div></div>`;
+  let html = `<div class="page paper-preview" style="--work:${work}"><div class="q"><div class="gut"><b class="qnum">1</b><small>${q.pts} pts</small><i>${g.uid}</i></div>${q.html}</div></div>`;
   if (document.getElementById("pvAns").checked) {
     let k = `<div class="pv-key"><div class="kblock"><h4>Answers <span>${q.summary}</span></h4><table class="kt"><colgroup><col style="width:46%"><col style="width:24%"><col style="width:23%"><col style="width:7%"></colgroup>`;
     for (const r of keyRows(q, 1, tol)) {
@@ -1544,7 +1735,33 @@ document.getElementById("pvClose").addEventListener("click", () => document.getE
 document.getElementById("pvDlg").addEventListener("click", e => { if (e.target.id === "pvDlg") e.target.close(); });
 
 /* ---------------- Wiring ---------------- */
-renderBlueprint();
+(function init() {
+  const c = QB.course;
+  document.getElementById("tol").value = String(c.tolerancePct);
+  document.getElementById("work").value = String(c.workSpace);
+  document.getElementById("pageBudget").value = c.pageBudget;
+  renderBlueprint(); renderPresets();
+  if (c.presets.length) { applyBlueprint(c.presets[0]); document.getElementById("preset").value = "0"; }
+  else updateSummary();
+})();
+document.getElementById("blueprint").addEventListener("input", updateSummary);
+document.getElementById("preset").addEventListener("change", e => { if (e.target.value !== "") applyBlueprint(QB.course.presets[+e.target.value]); });
+document.getElementById("bpSave").addEventListener("click", () => {
+  const bp = currentBlueprint();
+  if (!bp.items.length) { document.getElementById("bpMsg").textContent = "Choose at least one question group before saving."; return; }
+  download(`${bp.title.replace(/[^\w.-]+/g, "_")}-blueprint.json`, JSON.stringify(bp, null, 2), "application/json");
+});
+document.getElementById("bpLoadBtn").addEventListener("click", () => document.getElementById("bpLoad").click());
+document.getElementById("bpLoad").addEventListener("change", e => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try { const bp = JSON.parse(r.result); if (bp.format !== QB.BLUEPRINT_FORMAT) throw new Error("not a blueprint"); applyBlueprint(bp); document.getElementById("preset").value = ""; }
+    catch (err) { document.getElementById("bpMsg").textContent = `That file isn’t a quiz blueprint (${err.message}).`; }
+    e.target.value = "";
+  };
+  r.readAsText(f);
+});
 document.getElementById("date").valueAsDate = new Date();
 document.getElementById("csv").addEventListener("change", e => {
   const f = e.target.files[0]; if (!f) return;
@@ -1574,6 +1791,7 @@ function setView(v) {
 document.getElementById("vQuiz").addEventListener("click", () => setView("quiz"));
 document.getElementById("vKey").addEventListener("click", () => setView("key"));
 document.getElementById("print").addEventListener("click", () => window.print());
+
 </script>
 </body>
 </html>
