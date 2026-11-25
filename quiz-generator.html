@@ -702,7 +702,7 @@ QB.setCourse({
       format: "physics-quiz-blueprint/1", name: "Unit 6 quiz (challenge)", title: "Unit 6 Quiz: Introduction to Forces (Challenge)",
       pageBudget: 2, tolerancePct: 2, workSpace: 1,
       items: [
-        { group: "U6-B3", count: 1, version: 1 }, { group: "U6-D3", count: 1, version: 1 },
+        { group: "U6-B3", count: 1, version: 2 }, { group: "U6-D3", count: 1, version: 1 },
         { group: "U6-E1", count: 1, version: 1 },
       ],
     },
@@ -971,18 +971,28 @@ function genB2(rng, variant) {
 
 /* ----- B3: net force from motion ----- */
 const NF_OPTS = ["It is impossible to tell without knowing the mass", "Net force to the left", "Zero net force", "Net force to the right"];
-function b3Item(rng, kind, t1, t2) {
+function b3Item(rng, kind, t1, t2, second) {
+  const car = second ? "a different car" : "a car";
   if (kind === "xt") {
-    const types = [rng.pick(["rest", "line", "up", "down"]), rng.pick(["rest", "line", "up", "down"]), rng.pick(["rest", "line", "up", "down"])];
+    // Build a continuous velocity, one constant acceleration per section, so the slope of the
+    // position graph never jumps at a section boundary (velocity cannot change instantly).
+    const types = [], segs = [];
+    let v = rng.next() < 0.3 ? 0 : 1;
+    for (let i = 0; i < 3; i++) {
+      const ty = rng.pick(v === 0 ? ["rest", "up"] : ["line", "up", "down"]);
+      const dv = ty === "up" ? 1 : ty === "down" ? (v > 1.5 && rng.next() < 0.5 ? 1 : v) : 0;
+      segs.push({ v0: v, a: ty === "up" ? dv : ty === "down" ? -dv : 0 });
+      types.push(ty);
+      v += ty === "up" ? dv : -dv * (ty === "down");
+    }
     const k = rng.int(1, 3), ty = types[k - 1];
-    const seg = { rest: [0, 0], line: [1, 0], up: [0, 1], down: [2, -1] }; // x = x0 + v t + c t²
-    const fn = t => { let x = 0.4; for (let i = 0; i < 3; i++) { const u = Math.min(Math.max(t - i, 0), 1), [v, c] = seg[types[i]]; x += v * u + c * u * u; } return x; };
+    const fn = t => { let x = 0.4; for (let i = 0; i < 3; i++) { const u = Math.min(Math.max(t - i, 0), 1); x += segs[i].v0 * u + 0.5 * segs[i].a * u * u; } return x; };
     const ans = { rest: NF_OPTS[2], line: NF_OPTS[2], up: NF_OPTS[3], down: NF_OPTS[1] }[ty];
     const ideas = { rest: ["The graph is flat in this section, so the car is at rest", "At rest means zero acceleration, so zero net force"],
       line: ["The graph is a straight sloped line, so the velocity is constant", "Constant velocity means zero acceleration, so zero net force"],
       up: ["The slope gets steeper, so the car speeds up while moving right", "The acceleration and net force point right"],
       down: ["The slope gets less steep, so the car slows down while moving right", "Slowing while moving right means the acceleration and net force point left"] }[ty];
-    return { text: `The position–time graph describes the horizontal motion of a car. Right is positive.`, fig: sectionGraphSVG(fn, "Position"), kind: `x–t section ${k}: ${ty}`,
+    return { text: `The position–time graph describes the horizontal motion of ${car}. Right is positive.`, fig: sectionGraphSVG(fn, "Position"), kind: `x–t section ${k}: ${ty}`,
       parts: [choice(t1, `What net force must the car experience in section ${k}?`, NF_OPTS, ans), explain(t2, "Justify your answer using the graph.", ideas.join(". ") + ".", ideas, ideas.join(". ") + ".")] };
   }
   if (kind === "vt") {
@@ -994,7 +1004,7 @@ function b3Item(rng, kind, t1, t2) {
       flat: ["The velocity is constant in this section, so the acceleration is zero", "Zero acceleration means zero net force"],
       dec: ["The velocity decreases in this section, so the acceleration is negative", "Negative acceleration means the net force points left, even though the car still moves right"] }[ty];
     const opts = [NF_OPTS[1], NF_OPTS[2], NF_OPTS[3], NF_OPTS[0]];
-    return { text: `The velocity–time graph describes the horizontal motion of a car. Right is positive.`, fig: sectionGraphSVG(fn, "Velocity"), kind: `v–t section ${k}: ${ty}`,
+    return { text: `The velocity–time graph describes the horizontal motion of ${car}. Right is positive.`, fig: sectionGraphSVG(fn, "Velocity"), kind: `v–t section ${k}: ${ty}`,
       parts: [choice(t1, `What net force must the car experience in section ${k}?`, opts, ans), explain(t2, "Justify your answer using the graph.", ideas.join(". ") + ".", ideas, ideas.join(". ") + ".")] };
   }
   if (kind === "drone") {
@@ -1017,7 +1027,7 @@ function b3Item(rng, kind, t1, t2) {
 }
 function genB3(rng, variant) {
   const [k1, k2] = variant.split("+");
-  const A = b3Item(rng, k1, "a", "b"), B = b3Item(rng, k2, "c", "d");
+  const A = b3Item(rng, k1, "a", "b", false), B = b3Item(rng, k2, "c", "d", ["xt", "vt"].includes(k1) && ["xt", "vt"].includes(k2));
   const block = it => `<div class="qbody" style="margin-top:4px"><div class="qtext"><p>${it.text}</p>${mcBlock(it.parts[0], "col")}</div>${it.fig ? `<div class="fig">${it.fig}</div>` : ""}</div>${explainBlock(it.parts[1])}`;
   const html = `<div class="inner">${block(A)}<div style="border-top:1px dotted #ccc;margin:6px 0"></div>${block(B)}</div>`;
   return { html, statement: `(a, b) ${A.text} [${A.kind}] (c, d) ${B.text} [${B.kind}]`, givens: {}, spec: [...A.parts, ...B.parts], summary: `${A.kind}; ${B.kind}` };
@@ -1382,7 +1392,7 @@ const groups = [
     variants: ["inc", "dec", "const", "fall"], gen: genB2,
     vlabels: { inc: "Bicyclist speeding up", dec: "Bicyclist slowing", const: "Bicyclist constant", fall: "Skydiver" },
     lessons: [["6.8", "Free-Body Diagram Analysis 2", "#1–12"]] },
-  { id: "B3", tier: 2, version: 1, minutes: 6, def: 0, title: "Net force from motion", desc: "Graphs, overhead photos, elevators; justify",
+  { id: "B3", tier: 2, version: 2, minutes: 6, def: 0, title: "Net force from motion", desc: "Graphs, overhead photos, elevators; justify",
     objective: "Infer the direction of the net force from a position–time graph, velocity–time graph, motion diagram, or description, and justify it.",
     variants: ["xt+vt", "vt+drone", "drone+elevator", "elevator+xt"], gen: genB3,
     vlabels: { "xt+vt": "x–t graph + v–t graph", "vt+drone": "v–t graph + drone photos", "drone+elevator": "Drone photos + elevator", "elevator+xt": "Elevator + x–t graph" },
