@@ -32,6 +32,7 @@ Every answer area shows a small gray tag such as `2c`. The tag equals the part's
 - Choice parts: the student marks a box with an X. If more than one box is marked and none is clearly crossed out, award no credit and flag it.
 - Choice parts with `type: "choice_multiple"` ask the student to mark `select` boxes (usually two). Award the point only if exactly the expected boxes are marked.
 - Graph choices (for example, "Which graph shows…") have a checkbox labeled A–D under each small graph. `expected` is the letter.
+- "How many forces act on the object?" is a choice part with options 1–5; it needs no significant figures.
 - Table rows `d1`, `d2`, … : each row has its own tag in the first column. Units are given in the column headers, so no unit is needed in table cells.
 - Explanation parts (`type: "explanation"`) are answered on the ruled lines under the prompt.
 
@@ -39,12 +40,16 @@ Every answer area shows a small gray tag such as `2c`. The tag equals the part's
 
 Each part lists `points` by criterion. Score each criterion as all or nothing.
 
+Numeric parts whose `points` contain only `answer` (for example, net-force cells in a data table) need no work shown.
+
 **work (1 point)**: The row shows a correct equation (symbolic, such as f = μN) **and** a substitution with the student's numbers. A bare number with no equation earns 0. An equation alone with no substitution earns 0. For `given_unknown`, award the point if the Given box lists the given quantities with symbols and units and the Unknown box names at least the main quantity being found.
 
 **answer (1 point)**: The value is within `accept_range`, has 3 significant figures, and has the correct unit. If it is outside the range, apply ECF before marking it wrong.
 
 **fbd (2 points)**: Compare to `required_forces` (some questions have 3 forces, some have 4).
-- 2 points: every required force is drawn from the object, points the right direction, and is labeled (any reasonable label, such as W, mg, F_g, F_N, N, T, F_A, f, F_f, D, F_drag).
+- 2 points: every required force is drawn from the object, points the right direction, and is labeled (any reasonable label, such as W, mg, F_g, F_N, N, T, F_A, A, Th, f, F_f, D, F_drag).
+- Follow the course's naming: a person pushing or pulling directly is an applied force (A or F_A), not a normal force; a bicycle, car, rocket, helicopter, or fan propelling itself is thrust (Th), not friction. Accept either A or Th for a person's push, but not N or f.
+- Some questions ask for several free-body diagrams (tags such as `1a`, `1b`, `1c`); score each one separately against its own `required_forces`.
 - 1 point: exactly one force is missing, mislabeled, or points the wrong way, **or** one extra force appears that does not exist (for example, a "force of motion").
 - 0 points: anything worse.
 - Arrow lengths do not need to be to scale.

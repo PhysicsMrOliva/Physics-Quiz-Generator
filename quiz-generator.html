@@ -104,6 +104,7 @@ details.unit .bp{margin:0 6px 6px;width:calc(100% - 12px)}
 .q .fig{flex:0 0 auto}
 .q .fig svg{display:block}
 .q .inner{margin-top:2px}
+.q .inner > p:first-child{margin-top:0}
 .q .pair{display:flex;gap:18px;align-items:flex-start}
 .sans{font-family:"Avenir Next","Segoe UI",Arial,sans-serif}
 
@@ -174,6 +175,14 @@ table.grid.tall{width:100%}
 table.grid.tall td{height:calc(.5in * var(--work))}
 table.grid .stack{text-align:left;font:8.5pt/1.5 "Avenir Next","Segoe UI",Arial,sans-serif;display:inline-block}
 table.grid .stack .opt{display:block}
+
+/* Several free-body diagrams side by side */
+.fbdgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.fbdcell p{margin:0 0 3px;font-size:9.5pt;min-height:3.9em}
+.fbdcell .fbd{border:1px solid #b3b3b3;position:relative;height:calc(1.55in * var(--work))}
+.fbdcell .fbd span.l{position:absolute;top:2px;left:5px;font:8pt "Avenir Next","Segoe UI",Arial,sans-serif;color:#888}
+.fbdcell .fbd .ctag{position:absolute;top:2px;right:5px}
+table.grid td.cell{min-width:.9in}
 
 /* Filled-in sample (preview only) */
 .hw{font-family:"Bradley Hand","Segoe Print","Chalkboard SE","Comic Neue","Comic Sans MS",cursive;color:#1d4ed8;font-size:9.5pt;line-height:1.25}
@@ -682,6 +691,22 @@ QB.setCourse({
   // (Save button) and paste them here, or keep them as files in /blueprints.
   presets: [
     {
+      format: "physics-quiz-blueprint/1", name: "Unit 6 quiz (standard)", title: "Unit 6 Quiz: Introduction to Forces",
+      pageBudget: 2, tolerancePct: 2, workSpace: 1,
+      items: [
+        { group: "U6-A1", count: 1, version: 1 }, { group: "U6-B1", count: 1, version: 1 },
+        { group: "U6-C1", count: 1, version: 1 }, { group: "U6-D1", count: 1, version: 1 },
+      ],
+    },
+    {
+      format: "physics-quiz-blueprint/1", name: "Unit 6 quiz (challenge)", title: "Unit 6 Quiz: Introduction to Forces (Challenge)",
+      pageBudget: 2, tolerancePct: 2, workSpace: 1,
+      items: [
+        { group: "U6-B3", count: 1, version: 1 }, { group: "U6-D3", count: 1, version: 1 },
+        { group: "U6-E1", count: 1, version: 1 },
+      ],
+    },
+    {
       format: "physics-quiz-blueprint/1", name: "Unit 7 quiz (standard)", title: "Unit 7 Quiz: Friction",
       pageBudget: 2, tolerancePct: 2, workSpace: 1,
       items: [
@@ -693,12 +718,729 @@ QB.setCourse({
       format: "physics-quiz-blueprint/1", name: "Unit 7 quiz (challenge)", title: "Unit 7 Quiz: Friction (Challenge)",
       pageBudget: 2, tolerancePct: 2, workSpace: 1,
       items: [
-        { group: "U7-B1", count: 1, version: 1 }, { group: "U7-D1", count: 1, version: 1 },
-        { group: "U7-D3", count: 1, version: 1 },
+        { group: "U7-D3", count: 1, version: 1 }, { group: "U7-E1", count: 1, version: 1 },
       ],
     },
   ],
 });
+
+</script>
+<script>/* ---- units/unit-06-forces.js ---- */
+/* =====================================================================
+   units/unit-06-forces.js   (+Physics Unit 6: Introduction to Forces)
+   Question bank for one unit. Everything is inside the function below,
+   so names like genA1 cannot collide with other units.
+   Not included (teacher's choice): center of mass (6.17–6.18), angled
+   forces and ramps (6.15 angled tension, 6.19 #13–14), review and math
+   skills (6.1, 6.4), vocabulary (6.9 #1–9), hang glider (6.16 #2).
+   ===================================================================== */
+(() => {
+"use strict";
+
+/* ---------------- Shared pieces for this unit ---------------- */
+const pickN = (rng, arr, n) => rng.shuffle(arr.slice()).slice(0, n);
+const Wf = FRC("Weight", "W", "down"), Nf = FRC("Normal force", "N", "up");
+const SPEED = ["Increasing", "Decreasing", "Constant"];
+const COUNT = ["1", "2", "3", "4", "5"];
+const SVGFONT = `font-family="Avenir Next,Segoe UI,Arial,sans-serif"`;
+
+/* A free-body diagram with labeled values. forces: [{dir, label}], motion: "right" | "left" | "up" | "down" | null */
+function labeledFBD(forces, motion) {
+  const W = 290, H = 190, cx = 145, cy = 98, b = 28, L = 46;
+  let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Free-body diagram" ${SVGFONT} font-size="10.5">`;
+  s += `<rect x="${cx - b / 2}" y="${cy - b / 2}" width="${b}" height="${b}" fill="#e4e4e4" stroke="#222" stroke-width="1.2"/>`;
+  const count = {};
+  for (const f of forces) count[f.dir] = (count[f.dir] || 0) + 1;
+  const seen = {};
+  for (const f of forces) {
+    const i = seen[f.dir] = (seen[f.dir] ?? -1) + 1, off = count[f.dir] > 1 ? (i - (count[f.dir] - 1) / 2) * 16 : 0;
+    if (f.dir === "up") s += arrow(cx + off, cy - b / 2, cx + off, cy - b / 2 - L, "", 0, 0) + `<text x="${cx + off}" y="${cy - b / 2 - L - 5}" text-anchor="middle">${f.label}</text>`;
+    if (f.dir === "down") s += arrow(cx + off, cy + b / 2, cx + off, cy + b / 2 + L, "", 0, 0) + `<text x="${cx + off}" y="${cy + b / 2 + L + 13}" text-anchor="middle">${f.label}</text>`;
+    if (f.dir === "right") s += arrow(cx + b / 2, cy + off, cx + b / 2 + L, cy + off, "", 0, 0) + `<text x="${cx + b / 2 + L + 4}" y="${cy + off + 4}">${f.label}</text>`;
+    if (f.dir === "left") s += arrow(cx - b / 2, cy + off, cx - b / 2 - L, cy + off, "", 0, 0) + `<text x="${cx - b / 2 - L - 4}" y="${cy + off + 4}" text-anchor="end">${f.label}</text>`;
+  }
+  if (motion) {
+    const arr = { right: "→", left: "←", up: "↑", down: "↓" }[motion];
+    s += `<text x="4" y="14" font-size="10.5" fill="#333">Motion: ${arr} (${motion})</text>`;
+  }
+  return s + "</svg>";
+}
+/* Graph with three numbered sections. fn(t) for t in [0,3]. */
+function sectionGraphSVG(fn, yLabel) {
+  const W = 250, H = 150, L = 30, R = 10, T = 18, B = 26, pw = W - L - R, ph = H - T - B;
+  const ys = []; for (let i = 0; i <= 90; i++) ys.push(fn(i / 30));
+  const ymax = Math.max(...ys) * 1.1 || 1;
+  const X = t => L + pw * t / 3, Y = v => T + ph * (1 - v / ymax);
+  let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${yLabel} versus time graph" ${SVGFONT}>`;
+  s += `<line x1="${L}" y1="${T}" x2="${L}" y2="${T + ph}" stroke="#222"/><line x1="${L}" y1="${T + ph}" x2="${L + pw}" y2="${T + ph}" stroke="#222"/>`;
+  for (let k = 1; k <= 2; k++) s += `<line x1="${X(k)}" y1="${T}" x2="${X(k)}" y2="${T + ph}" stroke="#999" stroke-dasharray="3 3"/>`;
+  for (let k = 0; k < 3; k++) s += `<text x="${X(k + .5)}" y="${T - 5}" font-size="10" text-anchor="middle">${k + 1}</text>`;
+  s += `<polyline points="${ys.map((v, i) => `${X(i / 30)},${Y(v)}`).join(" ")}" fill="none" stroke="#111" stroke-width="2"/>`;
+  s += `<text transform="translate(12 ${T + ph / 2}) rotate(-90)" font-size="10" text-anchor="middle">${yLabel}</text>`;
+  s += `<text x="${L + pw / 2}" y="${H - 6}" font-size="10" text-anchor="middle">Time</text>`;
+  return s + "</svg>";
+}
+function droneStripSVG(kind, heading) {
+  const W = 340, H = 70, y = 40;
+  const gaps = [0, 1, 2].map(i => kind === "constant" ? 70 : kind === "speeding" ? 40 + i * 30 : 100 - i * 30);
+  let xs = [30]; gaps.forEach(g => xs.push(xs[xs.length - 1] + g));
+  if (heading === "west") xs = xs.map(x => W - 60 - x + 30);
+  let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Overhead photos of a drone" ${SVGFONT}>`;
+  xs.forEach((x, i) => {
+    s += `<g stroke="#222" stroke-width="1.1" fill="#fff"><line x1="${x - 9}" y1="${y - 9}" x2="${x + 9}" y2="${y + 9}"/><line x1="${x - 9}" y1="${y + 9}" x2="${x + 9}" y2="${y - 9}"/>
+      <circle cx="${x - 9}" cy="${y - 9}" r="4"/><circle cx="${x + 9}" cy="${y - 9}" r="4"/><circle cx="${x - 9}" cy="${y + 9}" r="4"/><circle cx="${x + 9}" cy="${y + 9}" r="4"/><rect x="${x - 3}" y="${y - 3}" width="6" height="6" fill="#ccc"/></g>
+      <text x="${x}" y="${y + 26}" font-size="9" text-anchor="middle">${i} s</text>`;
+  });
+  s += arrow(W - 16, 34, W - 16, 8, "", 0, 0) + `<text x="${W - 16}" y="46" font-size="10" text-anchor="middle">N</text>`;
+  return s + "</svg>";
+}
+function fanCartSVG(fans, blocks, label) {
+  const items = [...Array(fans).fill("fan"), ...Array(blocks).fill("block")];
+  const w = Math.max(90, items.length * 22 + 14), W = w + 40, H = 76, gy = 66, x0 = 20;
+  let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${label}" ${SVGFONT}>`;
+  s += `<text x="2" y="11" font-size="10">${label}</text>`;
+  s += `<rect x="${x0}" y="${gy - 18}" width="${w}" height="8" fill="#e4e4e4" stroke="#222"/><circle cx="${x0 + 12}" cy="${gy - 5}" r="5" fill="#fff" stroke="#222"/><circle cx="${x0 + w - 12}" cy="${gy - 5}" r="5" fill="#fff" stroke="#222"/>`;
+  s += `<line x1="0" y1="${gy}" x2="${W}" y2="${gy}" stroke="#222"/>`;
+  items.forEach((it, i) => {
+    const x = x0 + 8 + i * 22, y = gy - 38;
+    if (it === "block") s += `<rect x="${x}" y="${y}" width="18" height="20" fill="#bdbdbd" stroke="#222"/>`;
+    else s += `<rect x="${x + 6}" y="${y + 12}" width="6" height="8" fill="#fff" stroke="#222"/><circle cx="${x + 9}" cy="${y + 6}" r="7" fill="#fff" stroke="#222"/><line x1="${x + 9}" y1="${y - 1}" x2="${x + 9}" y2="${y + 13}" stroke="#222"/><path d="M${x} ${y + 3} h-6 M${x} ${y + 6} h-8 M${x} ${y + 9} h-6" stroke="#777"/>`;
+  });
+  return s + "</svg>";
+}
+const fbdCell = (p, text) => `<div class="fbdcell"><p>(${p.tag}) ${text}</p><div class="fbd" data-tag="${p.tag}"><span class="l">Free-body diagram</span>${tagSpan(p.tag)}</div></div>`;
+
+/* ----- A1: draw free-body diagrams ----- */
+const T_ = (dir) => FRC("Tension", "T", dir), Th_ = (dir) => FRC("Thrust", "Th", dir), A_ = (dir) => FRC("Applied force", "A", dir),
+  D_ = (dir) => FRC("Drag", "D", dir), f_ = (dir) => FRC("Friction", "f", dir);
+const A1_POOL = {
+  horizontal: [
+    ["A student pulls a box to the right across a smooth floor with a horizontal rope. Neglect friction and drag.", [Wf, Nf, T_("right")]],
+    ["A bicyclist pedals to the right. Include drag, but neglect any friction impeding the motion.", [Wf, Nf, Th_("right"), D_("left")]],
+    ["A bicyclist coasts (does not pedal) to the right. Include drag, but neglect any friction impeding the motion.", [Wf, Nf, D_("left")]],
+    ["A bicyclist moving to the right squeezes the brakes. Include drag.", [Wf, Nf, f_("left"), D_("left")]],
+    ["A car drives to the right while the driver presses the gas pedal. Include drag, but neglect any friction impeding the motion.", [Wf, Nf, Th_("right"), D_("left")]],
+    ["A car moving to the right slows down while the driver presses the brakes. Include drag.", [Wf, Nf, f_("left"), D_("left")]],
+    ["A physics cart (no motor) rolls to the right after being pushed. Neglect friction and drag.", [Wf, Nf]],
+    ["A student pushes a physics cart (no motor) to the right. Neglect friction and drag.", [Wf, Nf, A_("right")]],
+    ["One student pulls a box to the right with a horizontal rope while another student pushes it to the right. Neglect friction and drag.", [Wf, Nf, T_("right"), A_("right")]],
+    ["A fan cart moves to the right while its fan blows air to the left. Neglect friction and drag.", [Wf, Nf, Th_("right")]],
+  ],
+  vertical: [
+    ["A book rests on a table.", [Wf, Nf]],
+    ["A cannonball moves upward after being launched. Neglect drag.", [Wf]],
+    ["A cannonball falls back down. Neglect drag.", [Wf]],
+    ["A crane’s cable pulls up on a load, but not hard enough to lift it off the ground.", [Wf, Nf, T_("up")]],
+    ["A crane lifts a load into the air. Neglect drag.", [Wf, T_("up")]],
+    ["A student rides upward in an elevator.", [Wf, Nf]],
+    ["A helicopter sits on a landing pad with its blades not spinning.", [Wf, Nf]],
+    ["A helicopter sits on a landing pad with its blades spinning, but it has not lifted off yet.", [Wf, Nf, Th_("up")]],
+    ["A helicopter hovers in the air. Neglect drag.", [Wf, Th_("up")]],
+    ["A skydiver who has been falling for a long time (include drag).", [Wf, D_("up")]],
+    ["A skydiver falls after opening the parachute.", [Wf, D_("up")]],
+    ["A rocket moves upward while burning fuel. Include drag.", [Wf, Th_("up"), D_("down")]],
+    ["A rocket is still moving upward after running out of fuel. Include drag.", [Wf, D_("down")]],
+    ["A fan sitting on a scale blows air upward.", [Wf, Nf, Th_("down")]],
+  ],
+};
+function genA1(rng, variant) {
+  const H = A1_POOL.horizontal, V = A1_POOL.vertical;
+  let picks;
+  if (variant === "horizontal") picks = pickN(rng, H, 3);
+  else if (variant === "vertical") picks = pickN(rng, V, 3);
+  else { const all = rng.shuffle([...H, ...V]); picks = [rng.pick(H), rng.pick(V)]; picks.push(all.find(x => !picks.includes(x))); }
+  const statement = "Draw a free-body diagram of the object in each situation. Label every force with its symbol, and draw only forces in the plane of the page.";
+  const spec = picks.map(([txt, forces], i) => ({ tag: "abc"[i], type: "fbd", prompt: `Free-body diagram: ${txt}`, forces, pts: { fbd: 2 } }));
+  const html = `<div class="qbody"><div class="qtext"><p>${statement}</p></div></div>
+    <div class="inner fbdgrid">${picks.map(([txt], i) => fbdCell(spec[i], txt)).join("")}</div>`;
+  return { html, statement: statement + " " + picks.map(([t], i) => `(${"abc"[i]}) ${t}`).join(" "), givens: {}, spec, summary: picks.map(p => p[1].length).join("/") + " forces" };
+}
+
+/* ----- A2: which forces act ----- */
+const A2_MC = [
+  ["When does an object near Earth experience a weight force?", ["Always", "Only while it is moving", "Only while it is in the air", "Only while it touches a surface"], "Always"],
+  ["Which direction does the weight force point?", ["Straight down", "Perpendicular to the surface the object touches", "Opposite the object’s motion"], "Straight down"],
+  ["When does an object experience a normal force?", ["Only while it touches a surface", "Always", "Only while it is in the air", "Only while it is moving"], "Only while it touches a surface"],
+  ["Which direction does the normal force point?", ["Straight up, always", "Straight down", "Perpendicular to the surface, pushing away from it"], "Perpendicular to the surface, pushing away from it"],
+  ["When does a load hanging from a crane experience tension?", ["Only while the cable attached to it is tight", "Always", "Only while the load is moving", "Only while the load touches the ground"], "Only while the cable attached to it is tight"],
+  ["When should drag be included on an object?", ["Only while it moves through air", "Always", "Only while it falls", "Only while something pushes it"], "Only while it moves through air"],
+  ["When does a box experience an applied force from a person?", ["Only while the person is pushing or pulling it", "Whenever the box is moving", "Whenever the box slides on a rough surface"], "Only while the person is pushing or pulling it"],
+];
+const A2_CLAIMS = [
+  ["A box keeps sliding to the right across a frictionless floor after a student stops pushing it. A classmate says: “The box is moving to the right, so there must be a force on it to the right.”", "Disagree",
+    ["No force is needed to keep an object moving at a constant velocity", "With no friction or drag, nothing slows the box, so it keeps moving with no forward force", "A force is needed only to change the motion"],
+    "I disagree. Nothing is pushing the box anymore, but with no friction it keeps moving at a constant speed. A force is only needed to change motion."],
+  ["A hockey puck glides across smooth ice. A student says: “If no force pushed the puck forward, it would stop.”", "Disagree",
+    ["An object in motion stays in motion unless a net force acts on it", "The puck slows only because of friction or drag, not because a forward force is missing"],
+    "I disagree. A moving puck keeps moving unless something like friction or drag slows it. No forward force is needed."],
+  ["A rocket has run out of fuel but is still moving upward. A student says: “There must still be a thrust force pushing the rocket up.”", "Disagree",
+    ["Thrust exists only while the engine burns fuel", "The rocket keeps moving up because of the speed it already has, while weight and drag slow it"],
+    "I disagree. Thrust stops when the fuel runs out. The rocket keeps rising because it is already moving, but weight and drag slow it down."],
+  ["A book sits at rest on a table. A student says: “The book is not moving, so no forces act on it.”", "Disagree",
+    ["Weight and the normal force both act on the book", "The forces are balanced, so the net force is zero and the book stays at rest"],
+    "I disagree. Weight pulls the book down and the table pushes it up. The forces balance, so the book stays at rest."],
+  ["A skydiver falls at a constant speed. A student says: “The forces on the skydiver must be balanced.”", "Agree",
+    ["Constant speed in a straight line means zero acceleration", "Zero acceleration means zero net force, so drag balances weight"],
+    "I agree. Constant speed means no acceleration, so the net force is zero. The drag up equals the weight down."],
+  ["A cannonball moves upward after launch, and drag is negligible. A student says: “Only one force acts on the cannonball: its weight.”", "Agree",
+    ["Nothing touches the cannonball after launch, so there is no normal force, tension, or applied force", "The launch force acted only in the past", "Weight is the only force, which is why the cannonball slows on the way up"],
+    "I agree. After launch nothing touches the cannonball, so only weight acts on it. The push from the cannon is in the past."],
+];
+function genA2(rng) {
+  const mcs = pickN(rng, A2_MC, 2), [claimTxt, verdict, ideas, fill] = rng.pick(A2_CLAIMS);
+  const spec = [
+    ...mcs.map(([q, opts, ans], i) => choice("ab"[i], q, opts, ans)),
+    choice("c", "Do you agree or disagree with the student?", ["Agree", "Disagree"], verdict),
+    explain("d", "Explain your answer to (c).", fill, ideas, fill),
+  ];
+  const html = `<div class="inner">${mcBlock(spec[0], "col")}${mcBlock(spec[1], "col")}
+    <p style="margin:8px 0 2px">${claimTxt}</p>${mcBlock(spec[2], "row")}${explainBlock(spec[3], 3)}</div>`;
+  return { html, statement: claimTxt, givens: {}, spec, summary: `claim: ${verdict.toLowerCase()}` };
+}
+
+/* ----- B1: analyze a free-body diagram ----- */
+function genB1(rng, variant) {
+  const W = sf3(rng.uni(500, 900));
+  if (variant.startsWith("horiz")) {
+    const D = sf3(rng.uni(30, 120));
+    let Th;
+    if (variant === "horiz-inc") Th = sf3(D + rng.uni(20, 120)); else if (variant === "horiz-dec") Th = sf3(D * rng.uni(0.2, 0.7)); else Th = D;
+    const net = Th - D, dir = net > 0 ? "Right" : net < 0 ? "Left" : "None (zero net force)", speed = net > 0 ? "Increasing" : net < 0 ? "Decreasing" : "Constant";
+    const fig = labeledFBD([{ dir: "up", label: "N = ?" }, { dir: "down", label: `W = ${fmt3(W)} N` }, { dir: "right", label: `Th = ${fmt3(Th)} N` }, { dir: "left", label: `D = ${fmt3(D)} N` }], "right");
+    const statement = "The free-body diagram shows the forces on a bicyclist who is moving to the right.";
+    const spec = [
+      num("a", "Normal force, N", W, "N", "W"),
+      num("b", "Magnitude of the net force, |F<sub>net</sub>|", Math.abs(net), "N", net >= 0 ? "Th - D" : "D - Th"),
+      choice("c", "Direction of the net force", ["Right", "Left", "None (zero net force)"], dir),
+      choice("d", "The bicyclist’s speed is…", SPEED, speed),
+    ];
+    withEq(spec, { a: "N = W", b: `|${SUB("F", "net")}| = ${net >= 0 ? "Th − D" : "D − Th"}` });
+    const html = `<div class="qbody"><div class="qtext"><p>${statement}</p><p>Answer (a)–(d).</p></div><div class="fig">${fig}</div></div><div class="inner">${workTable(spec)}</div>`;
+    return { html, statement, givens: { W: { value: W, unit: "N" }, Th: { value: Th, unit: "N" }, D: { value: D, unit: "N" } }, spec, summary: `Th ${fmt3(Th)} vs D ${fmt3(D)}: ${speed.toLowerCase()}` };
+  }
+  const kind = rng.pick(["inc", "dec", "const"]);
+  const D = kind === "const" ? W : sf3(W * (kind === "inc" ? rng.uni(0.2, 0.8) : rng.uni(1.3, 2.0)));
+  const net = W - D, dir = net > 0 ? "Down" : net < 0 ? "Up" : "None (zero net force)", speed = net > 0 ? "Increasing" : net < 0 ? "Decreasing" : "Constant";
+  const fig = labeledFBD([{ dir: "up", label: `D = ${fmt3(D)} N` }, { dir: "down", label: `W = ${fmt3(W)} N` }], "down");
+  const statement = "The free-body diagram shows the forces on a skydiver who is falling straight down.";
+  const spec = [
+    num("a", "Mass of the skydiver", W / G, "kg", "W / g"),
+    num("b", "Magnitude of the net force, |F<sub>net</sub>|", Math.abs(net), "N", net >= 0 ? "W - D" : "D - W"),
+    choice("c", "Direction of the net force", ["Up", "Down", "None (zero net force)"], dir),
+    choice("d", "The skydiver’s speed is…", SPEED, speed),
+  ];
+  withEq(spec, { a: "m = W / g", b: `|${SUB("F", "net")}| = ${net >= 0 ? "W − D" : "D − W"}` });
+  const html = `<div class="qbody"><div class="qtext"><p>${statement}</p><p>Answer (a)–(d).</p></div><div class="fig">${fig}</div></div><div class="inner">${workTable(spec)}</div>`;
+  return { html, statement, givens: { W: { value: W, unit: "N" }, D: { value: D, unit: "N" }, g: { value: G, unit: "m/s^2" } }, spec, summary: `skydiver W ${fmt3(W)} vs D ${fmt3(D)}: ${speed.toLowerCase()}` };
+}
+
+/* ----- B2: find the missing force ----- */
+function genB2(rng, variant) {
+  const W = sf3(rng.uni(500, 900));
+  if (variant === "fall") {
+    const slowing = rng.next() < 0.5, F = sf3(W * rng.uni(0.15, 0.6));
+    const D = slowing ? W + F : W - F;
+    const fig = labeledFBD([{ dir: "up", label: "D = ?" }, { dir: "down", label: `W = ${fmt3(W)} N` }], "down");
+    const statement = `The free-body diagram shows the forces on a skydiver who is falling straight down. The magnitude of the net force is ${fmt3(F)} N, and the skydiver’s speed is ${slowing ? "decreasing" : "increasing"}.`;
+    const spec = [
+      choice("a", "Direction of the net force", ["Up", "Down", "None (zero net force)"], slowing ? "Up" : "Down"),
+      num("b", "Mass of the skydiver", W / G, "kg", "W / g"),
+      num("c", "Drag force, D", D, "N", slowing ? "W + F_net" : "W - F_net", [], slowing ? "net force up" : "net force down"),
+    ];
+    withEq(spec, { b: "m = W / g", c: slowing ? `D = W + ${SUB("F", "net")}` : `D = W − ${SUB("F", "net")}` });
+    const html = `<div class="qbody"><div class="qtext"><p>${statement}</p><p>Answer (a)–(c).</p></div><div class="fig">${fig}</div></div><div class="inner">${workTable(spec)}</div>`;
+    return { html, statement, givens: { W: { value: W, unit: "N" }, F_net: { value: F, unit: "N" }, g: { value: G, unit: "m/s^2" } }, spec, summary: `skydiver ${slowing ? "slowing" : "speeding up"}, D = ${fmt3(D)} N` };
+  }
+  const D = sf3(rng.uni(40, 120));
+  let F = 0, Th = D, speed = "constant", dir = "None (zero net force)";
+  if (variant === "inc") { F = sf3(rng.uni(20, 150)); Th = D + F; speed = "increasing"; dir = "Right"; }
+  if (variant === "dec") { F = sf3(D * rng.uni(0.2, 0.75)); Th = D - F; speed = "decreasing"; dir = "Left"; }
+  const fig = labeledFBD([{ dir: "up", label: "N = ?" }, { dir: "down", label: `W = ${fmt3(W)} N` }, { dir: "right", label: "Th = ?" }, { dir: "left", label: `D = ${fmt3(D)} N` }], "right");
+  const statement = `The free-body diagram shows the forces on a bicyclist who is moving to the right${variant === "const" ? " at a constant speed" : `. The magnitude of the net force is ${fmt3(F)} N, and the bicyclist’s speed is ${speed}`}. Neglect friction impeding the motion.`;
+  const spec = [
+    choice("a", "Direction of the net force", ["Right", "Left", "None (zero net force)"], dir),
+    num("b", "Normal force, N", W, "N", "W"),
+    num("c", "Thrust from pedaling, Th", Th, "N", variant === "inc" ? "D + F_net" : variant === "dec" ? "D - F_net" : "D"),
+  ];
+  withEq(spec, { b: "N = W", c: variant === "inc" ? `Th = D + ${SUB("F", "net")}` : variant === "dec" ? `Th = D − ${SUB("F", "net")}` : "Th = D" });
+  const html = `<div class="qbody"><div class="qtext"><p>${statement}</p><p>Answer (a)–(c).</p></div><div class="fig">${fig}</div></div><div class="inner">${workTable(spec)}</div>`;
+  const givens = { W: { value: W, unit: "N" }, D: { value: D, unit: "N" } };
+  if (variant !== "const") givens.F_net = { value: F, unit: "N" };
+  return { html, statement, givens, spec, summary: `bicyclist ${speed}, Th = ${fmt3(Th)} N` };
+}
+
+/* ----- B3: net force from motion ----- */
+const NF_OPTS = ["It is impossible to tell without knowing the mass", "Net force to the left", "Zero net force", "Net force to the right"];
+function b3Item(rng, kind, t1, t2) {
+  if (kind === "xt") {
+    const types = [rng.pick(["rest", "line", "up", "down"]), rng.pick(["rest", "line", "up", "down"]), rng.pick(["rest", "line", "up", "down"])];
+    const k = rng.int(1, 3), ty = types[k - 1];
+    const seg = { rest: [0, 0], line: [1, 0], up: [0, 1], down: [2, -1] }; // x = x0 + v t + c t²
+    const fn = t => { let x = 0.4; for (let i = 0; i < 3; i++) { const u = Math.min(Math.max(t - i, 0), 1), [v, c] = seg[types[i]]; x += v * u + c * u * u; } return x; };
+    const ans = { rest: NF_OPTS[2], line: NF_OPTS[2], up: NF_OPTS[3], down: NF_OPTS[1] }[ty];
+    const ideas = { rest: ["The graph is flat in this section, so the car is at rest", "At rest means zero acceleration, so zero net force"],
+      line: ["The graph is a straight sloped line, so the velocity is constant", "Constant velocity means zero acceleration, so zero net force"],
+      up: ["The slope gets steeper, so the car speeds up while moving right", "The acceleration and net force point right"],
+      down: ["The slope gets less steep, so the car slows down while moving right", "Slowing while moving right means the acceleration and net force point left"] }[ty];
+    return { text: `The position–time graph describes the horizontal motion of a car. Right is positive.`, fig: sectionGraphSVG(fn, "Position"), kind: `x–t section ${k}: ${ty}`,
+      parts: [choice(t1, `What net force must the car experience in section ${k}?`, NF_OPTS, ans), explain(t2, "Justify your answer using the graph.", ideas.join(". ") + ".", ideas, ideas.join(". ") + ".")] };
+  }
+  if (kind === "vt") {
+    let types; do { types = [0, 1, 2].map(() => rng.pick(["inc", "flat", "dec"])); } while (!(() => { let v = 1.2; for (const t of types) { v += t === "inc" ? 1 : t === "dec" ? -1 : 0; if (v < 0.2) return false; } return true; })());
+    const k = rng.int(1, 3), ty = types[k - 1];
+    const fn = t => { let v = 1.2; for (let i = 0; i < 3; i++) { const u = Math.min(Math.max(t - i, 0), 1); v += (types[i] === "inc" ? 1 : types[i] === "dec" ? -1 : 0) * u; } return v; };
+    const ans = { inc: NF_OPTS[3], flat: NF_OPTS[2], dec: NF_OPTS[1] }[ty];
+    const ideas = { inc: ["The velocity increases in this section, so the acceleration is positive", "Positive acceleration means the net force points right"],
+      flat: ["The velocity is constant in this section, so the acceleration is zero", "Zero acceleration means zero net force"],
+      dec: ["The velocity decreases in this section, so the acceleration is negative", "Negative acceleration means the net force points left, even though the car still moves right"] }[ty];
+    const opts = [NF_OPTS[1], NF_OPTS[2], NF_OPTS[3], NF_OPTS[0]];
+    return { text: `The velocity–time graph describes the horizontal motion of a car. Right is positive.`, fig: sectionGraphSVG(fn, "Velocity"), kind: `v–t section ${k}: ${ty}`,
+      parts: [choice(t1, `What net force must the car experience in section ${k}?`, opts, ans), explain(t2, "Justify your answer using the graph.", ideas.join(". ") + ".", ideas, ideas.join(". ") + ".")] };
+  }
+  if (kind === "drone") {
+    const motion = rng.pick(["constant", "speeding", "slowing"]), heading = rng.pick(["east", "west"]), opp = heading === "east" ? "west" : "east";
+    const opts = ["Net force to the north", "Net force to the east", "Net force to the south", "Net force to the west", "Zero net force"];
+    const ans = motion === "constant" ? "Zero net force" : `Net force to the ${motion === "speeding" ? heading : opp}`;
+    const ideas = [{ constant: "The drone moves equal distances each second, so its velocity is constant", speeding: `The spacing grows, so the drone speeds up while moving ${heading}`, slowing: `The spacing shrinks, so the drone slows down while moving ${heading}` }[motion],
+      { constant: "Constant velocity means zero net force", speeding: `Speeding up means the net force points ${heading}, the direction of motion`, slowing: `Slowing down means the net force points ${opp}, opposite the motion` }[motion]];
+    return { text: `A drone flies at a constant altitude. A camera takes an overhead photo of the drone every second, shown combined below (north is up).`, fig: droneStripSVG(motion, heading), kind: `drone ${heading}, ${motion}`,
+      parts: [choice(t1, "Describe the net force acting on the drone.", opts, ans), explain(t2, "Justify your answer using the photos.", ideas.join(". ") + ".", ideas, ideas.join(". ") + ".")] };
+  }
+  const c = rng.pick([["upward", "at a constant speed", "eq"], ["upward", "and speeding up", "gt"], ["upward", "and slowing down", "lt"], ["downward", "and speeding up", "lt"], ["downward", "and slowing down", "gt"]]);
+  const opts = ["The normal force is less than her weight", "The normal force equals her weight", "The normal force is greater than her weight", "It cannot be determined from the information given"];
+  const ans = { lt: opts[0], eq: opts[1], gt: opts[2] }[c[2]];
+  const netDir = c[2] === "eq" ? "zero" : c[2] === "gt" ? "up" : "down";
+  const ideas = [c[2] === "eq" ? "Constant speed means zero acceleration and zero net force" : `Her acceleration, and so the net force, points ${netDir}`,
+    c[2] === "eq" ? "So the normal force balances her weight" : `For the net force to point ${netDir}, the ${c[2] === "gt" ? "normal force must be larger than" : "weight must be larger than"} ${c[2] === "gt" ? "her weight" : "the normal force"}`];
+  return { text: `A student stands in an elevator that is moving ${c[0]} ${c[1]}.`, fig: "", kind: `elevator ${c[0]} ${c[1]}`,
+    parts: [choice(t1, "How does the normal force from the floor compare with the student’s weight?", opts, ans), explain(t2, "Justify your answer.", ideas.join(". ") + ".", ideas, ideas.join(". ") + ".")] };
+}
+function genB3(rng, variant) {
+  const [k1, k2] = variant.split("+");
+  const A = b3Item(rng, k1, "a", "b"), B = b3Item(rng, k2, "c", "d");
+  const block = it => `<div class="qbody" style="margin-top:4px"><div class="qtext"><p>${it.text}</p>${mcBlock(it.parts[0], "col")}</div>${it.fig ? `<div class="fig">${it.fig}</div>` : ""}</div>${explainBlock(it.parts[1])}`;
+  const html = `<div class="inner">${block(A)}<div style="border-top:1px dotted #ccc;margin:6px 0"></div>${block(B)}</div>`;
+  return { html, statement: `(a, b) ${A.text} [${A.kind}] (c, d) ${B.text} [${B.kind}]`, givens: {}, spec: [...A.parts, ...B.parts], summary: `${A.kind}; ${B.kind}` };
+}
+
+/* ----- C1: mass, weight, and Newton's third law ----- */
+const PAIRS = {
+  push: ["A student pushes horizontally on a box, and the box slides to the right at a constant speed across a rough floor.",
+    ["Friction on the box from the floor", "Applied force on the box from the student", "Friction on the student from the floor", "Force on the student from the box"], [1, 3]],
+  book: ["A book rests on a table.",
+    ["Weight of the book (Earth pulls the book down)", "Normal force on the book from the table", "Gravitational force on Earth from the book", "Friction on the book from the table"], [0, 2]],
+  swimmer: ["A swimmer pushes off the wall of a pool.",
+    ["Force on the wall from the swimmer’s feet", "Weight of the swimmer", "Force on the swimmer from the wall", "Drag on the swimmer from the water"], [0, 2]],
+};
+function genC1(rng, variant) {
+  const body = rng.pick(["the Moon", "Mars"]);
+  const [ctxText, opts, ans] = PAIRS[variant];
+  const k = rng.pick([0.5, 2, 3]), F = sf3(rng.uni(60, 200)), a1 = sf3(rng.uni(0.8, 3));
+  const kw = { 0.5: "half", 2: "twice", 3: "three times" }[k];
+  const fOpts = [k * F, F, F / k].map(v => `${fmt3(v)} N`), aOpts = [a1 * k, a1, a1 / k].map(v => `${fmt3(v)} m/s²`);
+  const spec = [
+    choice("a", `Where does the student have a greater mass?`, ["On Earth", `On ${body}`, "Equal"], "Equal"),
+    choice("b", `Where does the student have a greater weight?`, ["On Earth", `On ${body}`, "Equal"], "On Earth"),
+    multiChoice("c", "Which two forces form an action–reaction pair?", opts, [opts[ans[0]], opts[ans[1]]]),
+    choice("d", "What force does skater 2 experience during the push?", rng.shuffle(fOpts.slice()), `${fmt3(F)} N`),
+    choice("e", "What is skater 2’s acceleration during the push?", rng.shuffle(aOpts.slice()), `${fmt3(a1 / k)} m/s²`),
+  ];
+  const html = `<div class="inner"><p>For (a) and (b): A student travels from Earth to ${body}. Neglect the mass and weight of her space suit.</p>
+    ${mcBlock(spec[0], "row")}${mcBlock(spec[1], "row")}
+    <p style="margin-top:6px">For (c): ${ctxText}</p>${mcBlock(spec[2], "col2")}
+    <p style="margin-top:6px">For (d) and (e): Skater 2 has ${kw} the mass of skater 1. The skaters start at rest and push off from each other. During the push, skater 1 experiences a ${fmt3(F)} N force and accelerates at ${fmt3(a1)} m/s². Neglect friction and drag.</p>
+    ${mcBlock(spec[3], "row")}${mcBlock(spec[4], "row")}</div>`;
+  return { html, statement: `Earth to ${body}. ${ctxText} Skater 2 has ${kw} the mass of skater 1; skater 1: ${fmt3(F)} N, ${fmt3(a1)} m/s².`, givens: {}, spec, summary: `${body}; ${variant}; skater mass ×${k}` };
+}
+
+/* ----- C2: fan-cart comparisons ----- */
+const NICE = [[0.25, "¼a"], [1 / 3, "⅓a"], [0.5, "½a"], [2 / 3, "⅔a"], [0.75, "¾a"], [1, "a"], [1.5, "1.5a"], [2, "2a"], [3, "3a"], [4, "4a"]];
+function genC2(rng, variant) {
+  let nA, bA, nB, bB, r;
+  for (let tries = 0; tries < 500; tries++) {
+    nA = rng.int(1, 3); bA = rng.int(0, 3); nB = rng.int(1, 3); bB = rng.int(0, 3);
+    if (variant === "fans" && (bA !== bB || nA === nB)) continue;
+    if (variant === "blocks" && (nA !== nB || bA === bB)) continue;
+    if (variant === "both" && (nA === nB || bA === bB)) continue;
+    r = (nB / (nB + bB)) / (nA / (nA + bA));
+    if (NICE.some(([v]) => Math.abs(v - r) < 1e-9)) break;
+  }
+  const idx = NICE.findIndex(([v]) => Math.abs(v - r) < 1e-9);
+  const others = rng.shuffle(NICE.filter((_, i) => i !== idx && Math.abs(i - idx) <= 4)).slice(0, 3);
+  const opts = rng.shuffle([NICE[idx], ...others]).map(x => x[1]);
+  const cmp = (x, y) => x > y ? "Cart A" : x < y ? "Cart B" : "Equal";
+  const mA = nA + bA, mB = nB + bB, aA = nA / mA, aB = nB / mB;
+  const statement = "Two carts of negligible mass carry fans and blocks, as shown. Every fan and every block has the same mass, and every fan produces the same thrust. Friction and drag are negligible.";
+  const spec = [
+    choice("a", "Which cart has the greater total mass?", ["Cart A", "Cart B", "Equal"], cmp(mA, mB)),
+    choice("b", "Which cart experiences the greater net force?", ["Cart A", "Cart B", "Equal"], cmp(nA, nB)),
+    choice("c", "Which cart has the greater acceleration?", ["Cart A", "Cart B", "Equal"], cmp(aA, aB)),
+    choice("d", "If cart A’s acceleration is a, what is cart B’s acceleration?", opts, NICE[idx][1]),
+    explain("e", "Explain your answer to (d).", `A: ${nA} fan(s), ${mA} unit(s) of mass; B: ${nB} fan(s), ${mB} unit(s). B’s acceleration is ${NICE[idx][1]}.`,
+      ["The net force is proportional to the number of fans", "The mass is proportional to the total number of fans and blocks", "Acceleration is net force divided by mass, so compare the ratio for each cart"],
+      `Cart A has ${nA} fan${nA > 1 ? "s" : ""} pushing ${mA} masses, and cart B has ${nB} fan${nB > 1 ? "s" : ""} pushing ${mB} masses. Comparing net force divided by mass gives ${NICE[idx][1]}.`),
+  ];
+  const html = `<div class="qbody"><div class="qtext"><p>${statement}</p>${spec.slice(0, 3).map(p => mcBlock(p, "row")).join("")}</div>
+      <div class="fig">${fanCartSVG(nA, bA, "Cart A")}<br>${fanCartSVG(nB, bB, "Cart B")}</div></div>
+    <div class="inner">${mcBlock(spec[3], "row")}${explainBlock(spec[4])}</div>`;
+  return { html, statement: `${statement} Cart A: ${nA} fans, ${bA} blocks. Cart B: ${nB} fans, ${bB} blocks.`, givens: {}, spec, summary: `A ${nA}F+${bA}B, B ${nB}F+${bB}B → ${NICE[idx][1]}` };
+}
+
+/* ----- D1: forces → acceleration ----- */
+function genD1(rng, variant) {
+  let m, Th, D, statement, forces, speed, horiz = false, netExpr, net, Wexpr = "m * g", vert;
+  const R = (lo, hi) => sf3(rng.uni(lo, hi));
+  switch (variant) {
+    case "pedal": m = R(55, 90); D = R(30, 80); Th = sf3(D + rng.uni(40, 200)); horiz = true;
+      statement = `A ${fmt3(m)} kg bicyclist (including the bicycle) pedals to the right, generating a ${fmt3(Th)} N thrust while experiencing a ${fmt3(D)} N drag. Neglect any friction impeding the motion.`;
+      forces = [Wf, Nf, Th_("right"), D_("left")]; netExpr = "Th - D"; net = Th - D; speed = "Increasing"; break;
+    case "coast": m = R(50, 90); D = R(25, 80); horiz = true;
+      statement = `A ${fmt3(m)} kg bicyclist (including the bicycle) coasts to the right without pedaling while experiencing a ${fmt3(D)} N drag. Neglect any friction impeding the motion.`;
+      forces = [Wf, Nf, D_("left")]; netExpr = "D"; net = D; speed = "Decreasing"; break;
+    case "skydive": m = R(55, 90); D = sf3(m * G * rng.uni(0.3, 0.85));
+      statement = `A ${fmt3(m)} kg skydiver (including the parachute) falls before opening the parachute and experiences a ${fmt3(D)} N drag.`;
+      forces = [Wf, D_("up")]; netExpr = "{c} - D"; net = m * G - D; speed = "Increasing"; vert = true; break;
+    case "parachute": m = R(50, 65); D = sf3(m * G * rng.uni(1.3, 2.4));
+      statement = `A ${fmt3(m)} kg skydiver (including the parachute) is falling. As the parachute opens, the skydiver experiences a ${fmt3(D)} N drag.`;
+      forces = [Wf, D_("up")]; netExpr = "D - {c}"; net = D - m * G; speed = "Decreasing"; vert = true; break;
+    case "rocket": m = R(3, 8); D = R(10, 60); Th = sf3(m * G + D + m * rng.uni(4, 15));
+      statement = `A ${fmt3(m)} kg model rocket moves upward while burning fuel. It generates a ${fmt3(Th)} N thrust and experiences a ${fmt3(D)} N drag.`;
+      forces = [Wf, Th_("up"), D_("down")]; netExpr = "Th - {c} - D"; net = Th - m * G - D; speed = "Increasing"; vert = true; break;
+    case "fancart": m = R(0.5, 2.5); Th = R(0.15, 0.8); horiz = true;
+      statement = `A ${fmt3(m)} kg fan cart moves to the right while its fan generates a ${fmt3(Th)} N thrust. Neglect friction and drag.`;
+      forces = [Wf, Nf, Th_("right")]; netExpr = "Th"; net = Th; speed = "Increasing"; break;
+    default: m = R(2, 30); vert = true;
+      statement = `A ${fmt3(m)} kg cannonball is moving upward after being launched. Neglect drag.`;
+      forces = [Wf]; netExpr = "{c}"; net = m * G; speed = "Decreasing";
+  }
+  const spec = [
+    fbdPart(forces, ""), GU,
+    choice("b", "How many forces act on the object?", COUNT, String(forces.length)),
+    num("c", horiz ? "Normal force, N" : "Weight, W", m * G, "N", Wexpr),
+    num("d", "Magnitude of the net force, |F<sub>net</sub>|", net, "N", netExpr, netExpr.includes("{c}") ? ["c"] : []),
+    num("e", "Magnitude of the acceleration", net / m, "m/s²", "{d} / m", ["d"]),
+    choice("f", "The object’s speed is…", SPEED, speed),
+  ];
+  spec[0].prompt = "Free-body diagram of the object";
+  const netEq = netExpr.replace("{c}", "W").replace(/ - /g, " − ");
+  withEq(spec, { c: horiz ? "N = mg" : "W = mg", d: `|${SUB("F", "net")}| = ${netEq}`, e: `a = ${SUB("F", "net")} / m` });
+  const html = `<div class="qbody"><div class="qtext"><p>${statement}</p><p>(a) Draw a free-body diagram. Then answer (b)–(f).</p></div></div>
+    <div class="inner">${setupBlock()}${workTable(spec)}</div>`;
+  const givens = { m: { value: m, unit: "kg" }, g: { value: G, unit: "m/s^2" } };
+  if (Th !== undefined) givens.Th = { value: Th, unit: "N" };
+  if (D !== undefined) givens.D = { value: D, unit: "N" };
+  return { html, statement, givens, spec, summary: `${variant}: a = ${fmt3(net / m)} m/s², ${speed.toLowerCase()}` };
+}
+
+/* ----- D2: acceleration → missing force ----- */
+function genD2(rng, variant) {
+  const R = (lo, hi) => sf3(rng.uni(lo, hi));
+  let m, a, D, statement, forces, dirOpts, dir, horiz, missing, missingPrompt, missingExpr, missingEq, nForces;
+  if (variant === "bike-speed" || variant === "bike-const") {
+    m = R(55, 90); D = R(30, 80); horiz = true; dirOpts = ["Right", "Left", "None (zero net force)"];
+    const constant = variant === "bike-const"; a = constant ? 0 : R(0.5, 2.0);
+    statement = constant ? `A ${fmt3(m)} kg bicyclist (including the bicycle) pedals to the right at a constant speed while experiencing a ${fmt3(D)} N drag. Neglect any friction impeding the motion.`
+      : `A ${fmt3(m)} kg bicyclist (including the bicycle) pedals to the right, and her speed increases at a rate of ${fmt3(a)} m/s² while she experiences a ${fmt3(D)} N drag. Neglect any friction impeding the motion.`;
+    forces = [Wf, Nf, Th_("right"), D_("left")]; dir = constant ? dirOpts[2] : "Right";
+    missing = m * a + D; missingPrompt = "Thrust from pedaling, Th"; missingExpr = "{d} + D"; missingEq = `Th = ${SUB("F", "net")} + D`;
+  } else if (variant === "rocket") {
+    m = R(3, 8); a = R(3, 9); D = R(20, 100); dirOpts = ["Up", "Down", "None (zero net force)"]; dir = "Up";
+    statement = `During take-off, a ${fmt3(m)} kg model rocket burns fuel, and its upward speed increases at a rate of ${fmt3(a)} m/s² while it experiences a ${fmt3(D)} N drag.`;
+    forces = [Wf, Th_("up"), D_("down")]; missing = m * a + m * G + D; missingPrompt = "Thrust, Th"; missingExpr = "{d} + {e} + D"; missingEq = `Th = ${SUB("F", "net")} + W + D`;
+  } else if (variant === "parachute") {
+    m = R(50, 65); a = R(2, 4); dirOpts = ["Up", "Down", "None (zero net force)"]; dir = "Up";
+    statement = `A ${fmt3(m)} kg skydiver (including the parachute) is falling. Just after the parachute opens, the skydiver’s speed decreases at a rate of ${fmt3(a)} m/s².`;
+    forces = [Wf, D_("up")]; missing = m * a + m * G; missingPrompt = "Drag force, D"; missingExpr = "{d} + {e}"; missingEq = `D = ${SUB("F", "net")} + W`;
+  } else {
+    m = R(60, 95); D = R(20, 60); const f = R(80, 300); a = sf3((f + D) / m); horiz = true; dirOpts = ["Right", "Left", "None (zero net force)"]; dir = "Left";
+    statement = `A ${fmt3(m)} kg scooter rider (including the scooter) moving to the right squeezes the brakes, and her speed decreases at a rate of ${fmt3(a)} m/s². She experiences a ${fmt3(D)} N drag.`;
+    forces = [Wf, Nf, f_("left"), D_("left")]; missing = m * a - D; missingPrompt = "Friction from braking, f"; missingExpr = "{d} - D"; missingEq = `f = ${SUB("F", "net")} − D`;
+  }
+  const spec = [
+    fbdPart(forces, ""), GU,
+    choice("b", "How many forces act on the object?", COUNT, String(forces.length)),
+    choice("c", "Direction of the net force", dirOpts, dir),
+    num("d", "Magnitude of the net force, |F<sub>net</sub>|", m * a, "N", a === 0 ? "0" : "m * a"),
+    num("e", horiz ? "Normal force, N" : "Weight, W", m * G, "N", "m * g"),
+    num("f", missingPrompt, missing, "N", missingExpr, ["d", ...(missingExpr.includes("{e}") ? ["e"] : [])]),
+  ];
+  spec[0].prompt = "Free-body diagram of the object";
+  withEq(spec, { d: a === 0 ? `${SUB("F", "net")} = 0 (constant speed)` : `${SUB("F", "net")} = ma`, e: horiz ? "N = mg" : "W = mg", f: missingEq });
+  const html = `<div class="qbody"><div class="qtext"><p>${statement}</p><p>(a) Draw a free-body diagram. Then answer (b)–(f).</p></div></div>
+    <div class="inner">${setupBlock()}${workTable(spec)}</div>`;
+  const givens = { m: { value: m, unit: "kg" }, g: { value: G, unit: "m/s^2" }, a: { value: a, unit: "m/s^2" } };
+  if (D !== undefined) givens.D = { value: D, unit: "N" };
+  return { html, statement, givens, spec, summary: `${variant}: missing force ${fmt3(missing)} N` };
+}
+
+/* ----- D3: elevator and scale ----- */
+function genD3(rng, variant) {
+  const W = sf3(rng.uni(450, 850)), m = W / G;
+  const [motion, change] = variant.split("-");
+  const a = change === "const" ? 0 : sf3(rng.uni(0.5, 3.0));
+  const up = (motion === "up" && change === "speed") || (motion === "down" && change === "slow");
+  const N = change === "const" ? W : up ? W + m * a : W - m * a;
+  const desc = change === "const" ? `moving ${motion === "up" ? "upward" : "downward"} at a constant speed` : `moving ${motion === "up" ? "upward" : "downward"}, and its speed is ${change === "speed" ? "increasing" : "decreasing"} at a rate of ${fmt3(a)} m/s²`;
+  const statement = `A student who weighs ${fmt3(W)} N stands on a bathroom scale in an elevator. The elevator is ${desc}.`;
+  const cmp = ["The normal force is less than her weight", "The normal force equals her weight", "The normal force is greater than her weight"];
+  const spec = [
+    fbdPart([Wf, Nf], "of the student"), GU,
+    num("b", "Mass of the student", m, "kg", "W / g"),
+    choice("c", "Direction of the net force on the student", ["Up", "Down", "None (zero net force)"], change === "const" ? "None (zero net force)" : up ? "Up" : "Down"),
+    num("d", "Magnitude of the net force, |F<sub>net</sub>|", m * a, "N", change === "const" ? "0" : "{b} * a", change === "const" ? [] : ["b"]),
+    num("e", "Normal force on the student, N", N, "N", change === "const" ? "W" : up ? "W + {d}" : "W - {d}", change === "const" ? [] : ["d"]),
+    choice("f", "Which force does the scale read?", ["Her weight", "The normal force", "The net force"], "The normal force"),
+    choice("g", "Compare the normal force with her weight.", cmp, change === "const" ? cmp[1] : up ? cmp[2] : cmp[0]),
+  ];
+  withEq(spec, { b: "m = W / g", d: change === "const" ? `${SUB("F", "net")} = 0` : `${SUB("F", "net")} = ma`, e: change === "const" ? "N = W" : up ? `N = W + ${SUB("F", "net")}` : `N = W − ${SUB("F", "net")}` });
+  const html = `<div class="qbody"><div class="qtext"><p>${statement}</p><p>(a) Draw a free-body diagram of the student. Then answer (b)–(g).</p></div></div>
+    <div class="inner">${setupBlock()}${workTable(spec)}</div>`;
+  const givens = { W: { value: W, unit: "N" }, g: { value: G, unit: "m/s^2" } };
+  if (a) givens.a = { value: a, unit: "m/s^2" };
+  return { html, statement, givens, spec, summary: `${motion}, ${change}: scale reads ${fmt3(N)} N` };
+}
+
+/* ----- D4: data and claims ----- */
+function genD4(rng, variant) {
+  const labels = ["A", "B", "C"];
+  let rows, spec, extra, statement, summary, tbl;
+  const cellRow = (L, d, th, m, a, tag) => `<tr><td>${L}</td><td>${fmt3(d)}</td><td>${fmt3(th)}</td><td>${fmt3(m)}</td><td class="cell" data-tag="${tag}" style="position:relative">${tagSpan(tag, "corner")}</td><td>${fmt3(a)}</td></tr>`;
+  const head = `<table class="grid"><thead><tr><th>Trial</th><th>Drag (N)</th><th>Thrust (N)</th><th>Mass (kg)</th><th>Net force (N)</th><th>Acceleration (m/s²)</th></tr></thead><tbody>`;
+  const cellPart = (tag, L, d, th) => ({ tag, type: "num", prompt: `Net force in trial ${L}`, value: th - d, unit: "N", expr: `Th_${L} - D_${L}`, deps: [], pts: { answer: 1 } });
+  if (variant === "mass") {
+    const d = sf3(rng.uni(40, 120)), th = sf3(d + rng.uni(100, 300)), base = rng.pick([20, 40, 50, 60]);
+    const ms = [base, base * 1.5, base * 2].map(sf3), mNew = sf3(base * rng.pick([2.5, 3, 4]));
+    rows = ms.map((m, i) => ({ L: labels[i], d, th, m, a: sf3((th - d) / m) }));
+    statement = "A student measures a bicyclist’s acceleration in a simulation for the trials shown. She changes only the mass.";
+    spec = [
+      ...rows.map((r, i) => cellPart(["a", "b", "c"][i], r.L, r.d, r.th)),
+      choice("d", "Which relationship best fits the data?", ["a ∝ m", "a ∝ 1/m", "a ∝ m²", "a does not depend on m"], "a ∝ 1/m"),
+      choice("e", "As the mass increases, the acceleration…", ["increases", "decreases", "stays the same"], "decreases"),
+      num("f", `Predicted acceleration with the same drag and thrust and a mass of ${fmt3(mNew)} kg`, (th - d) / mNew, "m/s²", "(Th_A - D_A) / m_new", ["a"]),
+    ];
+    withEq(spec, { f: `a = ${SUB("F", "net")} / m` });
+    summary = `mass trials; predict ${fmt3(mNew)} kg`;
+    extra = { m_new: { value: mNew, unit: "kg" } };
+  } else {
+    const d = sf3(rng.uni(50, 150)), T1 = sf3(d + rng.uni(60, 160)), m = rng.pick([60, 80, 100]);
+    const trials = rng.shuffle([{ d, th: T1, id: "x" }, { d, th: T1 + d, id: "y" }, { d: 0, th: T1, id: "z" }]);
+    rows = trials.map((t, i) => ({ L: labels[i], d: t.d, th: t.th, m, a: sf3((t.th - t.d) / m), id: t.id }));
+    const L = id => rows.find(r => r.id === id).L;
+    const pairName = (p, q) => [p, q].sort().join(" & ");
+    const sameNet = variant === "same-net";
+    const claim = sameNet ? "trials with the same net force have the same acceleration" : "trials with the same thrust have the same acceleration";
+    const pair = sameNet ? pairName(L("y"), L("z")) : pairName(L("x"), L("z"));
+    const thNew = sf3(T1 + 2 * d + rng.uni(50, 150));
+    statement = `A student measures a bicyclist’s acceleration in a simulation for the trials shown. The mass is the same in every trial. A classmate claims that ${claim}.`;
+    spec = [
+      ...rows.map((r, i) => cellPart(["a", "b", "c"][i], r.L, r.d, r.th)),
+      choice("d", "Which two trials provide evidence for or against the claim?", ["A & B", "A & C", "B & C"], pair),
+      choice("e", "Based on the evidence, is the claim true or false?", ["True", "False"], sameNet ? "True" : "False"),
+      num("f", `Predicted acceleration with a ${fmt3(d)} N drag and a ${fmt3(thNew)} N thrust`, (thNew - d) / m, "m/s²", "(Th_new - D) / m"),
+    ];
+    withEq(spec, { f: `a = (Th − D) / m` });
+    summary = `${variant}: pair ${pair}`;
+    extra = { Th_new: { value: thNew, unit: "N" }, D: { value: d, unit: "N" }, m: { value: m, unit: "kg" } };
+  }
+  tbl = head + rows.map((r, i) => cellRow(r.L, r.d, r.th, r.m, r.a, ["a", "b", "c"][i])).join("") + "</tbody></table>";
+  const html = `<div class="qbody"><div class="qtext"><p>${statement}</p><p>(a)–(c) Fill in the net force for each trial. Then answer (d)–(f).</p>${tbl}</div></div>
+    <div class="inner">${mcBlock(spec[3], "row")}${mcBlock(spec[4], "row")}${workTable([spec[5]])}</div>`;
+  const givens = Object.fromEntries(rows.flatMap(r => [[`D_${r.L}`, { value: r.d, unit: "N" }], [`Th_${r.L}`, { value: r.th, unit: "N" }], [`m_${r.L}`, { value: r.m, unit: "kg" }], [`a_${r.L}`, { value: r.a, unit: "m/s^2" }]]));
+  return { html, statement: statement + " " + rows.map(r => `${r.L}: D ${r.d} N, Th ${r.th} N, m ${r.m} kg, a ${r.a} m/s²`).join("; "), givens: { ...givens, ...extra }, spec, summary };
+}
+
+/* ----- E1: forces plus motion ----- */
+function genE1(rng, variant) {
+  const R = (lo, hi) => sf3(rng.uni(lo, hi));
+  let statement, spec, givens, summary, forces;
+  if (variant === "bike") {
+    const m = R(55, 90), D = R(30, 80), Th = sf3(D + rng.uni(60, 200)), t = R(4, 9);
+    const net = Th - D, a = net / m;
+    statement = `A ${fmt3(m)} kg bicyclist (including the bicycle) starts from rest and pedals to the right, generating a ${fmt3(Th)} N thrust for ${fmt3(t)} s. During this time she experiences a ${fmt3(D)} N drag. Neglect any friction impeding the motion.`;
+    forces = [Wf, Nf, Th_("right"), D_("left")];
+    spec = [fbdPart(forces, ""), GU,
+      num("b", "Magnitude of the net force", net, "N", "Th - D"),
+      num("c", "Magnitude of her acceleration", a, "m/s²", "{b} / m", ["b"]),
+      num("d", "Her final speed", a * t, "m/s", "{c} * t", ["c"]),
+      num("e", "Distance traveled during this time", 0.5 * a * t * t, "m", "0.5 * {c} * t * t", ["c"])];
+    withEq(spec, { b: `${SUB("F", "net")} = Th − D`, c: `a = ${SUB("F", "net")} / m`, d: `${SUB("v", "f")} = at`, e: `Δx = ½at²` });
+    givens = { m: { value: m, unit: "kg" }, Th: { value: Th, unit: "N" }, D: { value: D, unit: "N" }, t: { value: t, unit: "s" } };
+    summary = `bike: a = ${fmt3(a)} m/s², v = ${fmt3(a * t)} m/s`;
+  } else if (variant === "rocket") {
+    const m = R(3, 8), t = R(3, 8), v = R(40, 120), D = R(20, 80), a = v / t;
+    statement = `During take-off, a ${fmt3(m)} kg model rocket starts from rest and burns fuel for ${fmt3(t)} s, reaching an upward speed of ${fmt3(v)} m/s. During this time it experiences a ${fmt3(D)} N drag.`;
+    forces = [Wf, Th_("up"), D_("down")];
+    spec = [fbdPart(forces, ""), GU,
+      num("b", "Magnitude of the rocket’s acceleration", a, "m/s²", "v / t"),
+      num("c", "Magnitude of the net force", m * a, "N", "m * {b}", ["b"]),
+      num("d", "Weight of the rocket", m * G, "N", "m * g"),
+      num("e", "Thrust", m * a + m * G + D, "N", "{c} + {d} + D", ["c", "d"]),
+      num("f", "Height when the fuel runs out", 0.5 * v * t, "m", "0.5 * {b} * t * t", ["b"])];
+    withEq(spec, { b: "a = Δv / t", c: `${SUB("F", "net")} = ma`, d: "W = mg", e: `Th = ${SUB("F", "net")} + W + D`, f: "Δy = ½at²" });
+    givens = { m: { value: m, unit: "kg" }, t: { value: t, unit: "s" }, v: { value: v, unit: "m/s" }, D: { value: D, unit: "N" }, g: { value: G, unit: "m/s^2" } };
+    summary = `rocket: Th = ${fmt3(m * a + m * G + D)} N`;
+  } else {
+    const m = R(0.2, 5), h = R(10, 80), tf = Math.sqrt(2 * h / G);
+    statement = `A student drops a ${fmt3(m)} kg ball from rest, ${fmt3(h)} m above the ground. Neglect drag.`;
+    forces = [Wf];
+    spec = [fbdPart(forces, ""), GU,
+      num("b", "Magnitude of the net force on the ball", m * G, "N", "m * g"),
+      num("c", "Magnitude of the ball’s acceleration", G, "m/s²", "{b} / m", ["b"]),
+      num("d", "Time to reach the ground", tf, "s", "sqrt(2 * h / {c})", ["c"]),
+      num("e", "Speed just before hitting the ground", G * tf, "m/s", "{c} * {d}", ["c", "d"])];
+    withEq(spec, { b: `${SUB("F", "net")} = W = mg`, c: `a = ${SUB("F", "net")} / m`, d: "Δy = ½at²", e: `${SUB("v", "f")} = at` });
+    givens = { m: { value: m, unit: "kg" }, h: { value: h, unit: "m" }, g: { value: G, unit: "m/s^2" } };
+    summary = `drop ${fmt3(h)} m: t = ${fmt3(tf)} s`;
+  }
+  spec[0].prompt = "Free-body diagram of the object";
+  const html = `<div class="qbody"><div class="qtext"><p>${statement}</p><p>(a) Draw a free-body diagram${variant === "ball" ? " of the falling ball" : " while the force acts"}. Then answer the remaining parts.</p></div></div>
+    <div class="inner">${setupBlock()}${workTable(spec)}</div>`;
+  return { html, statement, givens, spec, summary };
+}
+
+/* ----- E2: two-stage motion ----- */
+function genE2(rng, variant) {
+  const R = (lo, hi) => sf3(rng.uni(lo, hi));
+  let statement, spec, givens, summary;
+  if (variant === "rocket") {
+    const m = R(2, 6), D = R(5, 25), t1 = R(2, 4), Th = sf3(m * G + D + m * rng.uni(5, 12));
+    const a1 = (Th - m * G - D) / m, v1 = a1 * t1, h1 = 0.5 * a1 * t1 * t1, a2 = (m * G + D) / m, hmax = h1 + v1 * v1 / (2 * a2);
+    statement = `A ${fmt3(m)} kg model rocket starts from rest and accelerates straight up with a ${fmt3(Th)} N thrust while it burns fuel for ${fmt3(t1)} s. After the fuel runs out, it keeps rising until it reaches its maximum height. A steady ${fmt3(D)} N drag acts on it the whole time. Neglect the mass of the fuel used.`;
+    spec = [fbdPart([Wf, Th_("up"), D_("down")], "while it burns fuel"), GU,
+      num("b", "Acceleration while burning fuel", a1, "m/s²", "(Th - m * g - D) / m"),
+      num("c", "Maximum speed (when the fuel runs out)", v1, "m/s", "{b} * t_1", ["b"]),
+      num("d", "Height when the fuel runs out", h1, "m", "0.5 * {b} * t_1 * t_1", ["b"]),
+      num("e", "Magnitude of the acceleration after the fuel runs out", a2, "m/s²", "(m * g + D) / m"),
+      num("f", "Maximum height", hmax, "m", "{d} + {c} * {c} / (2 * {e})", ["c", "d", "e"])];
+    spec[0].prompt = "Free-body diagram of the rocket while it burns fuel";
+    withEq(spec, { b: "a = (Th − W − D) / m", c: `${SUB("v", "f")} = at`, d: "Δy = ½at²", e: "a = (W + D) / m", f: `y = ${SUB("y", "1")} + ${SUB("v", "1")}² / (2a)` });
+    givens = { m: { value: m, unit: "kg" }, Th: { value: Th, unit: "N" }, D: { value: D, unit: "N" }, t_1: { value: t1, unit: "s" }, g: { value: G, unit: "m/s^2" } };
+    summary = `rocket: max height ${fmt3(hmax)} m`;
+  } else {
+    let m, D, t1, H, a1, y1, vt;
+    do { m = R(3, 8); D = sf3(m * G * rng.uni(0.15, 0.45)); t1 = R(3, 7); H = R(300, 600); a1 = (m * G - D) / m; y1 = 0.5 * a1 * t1 * t1; vt = a1 * t1; } while (y1 > 0.6 * H);
+    const ttot = t1 + (H - y1) / vt;
+    statement = `A student drops a ${fmt3(m)} kg pumpkin from a helicopter hovering ${fmt3(H)} m above the ground. The pumpkin experiences an average drag of ${fmt3(D)} N for the first ${fmt3(t1)} s of the fall, and then falls the rest of the way at a constant (terminal) speed.`;
+    spec = [fbdPart([Wf, D_("up")], "during the first part of the fall"), GU,
+      num("b", "Acceleration during the first part of the fall", a1, "m/s²", "(m * g - D) / m"),
+      num("c", "Terminal speed", vt, "m/s", "{b} * t_1", ["b"]),
+      num("d", "Distance fallen before reaching terminal speed", y1, "m", "0.5 * {b} * t_1 * t_1", ["b"]),
+      num("e", "Drag force while falling at terminal speed", m * G, "N", "m * g"),
+      num("f", "Total time to reach the ground", ttot, "s", "t_1 + (H - {d}) / {c}", ["c", "d"])];
+    spec[0].prompt = "Free-body diagram of the pumpkin during the first part of the fall";
+    withEq(spec, { b: "a = (W − D) / m", c: `${SUB("v", "t")} = at`, d: "Δy = ½at²", e: "D = W", f: `t = ${SUB("t", "1")} + (H − Δy) / ${SUB("v", "t")}` });
+    givens = { m: { value: m, unit: "kg" }, D: { value: D, unit: "N" }, t_1: { value: t1, unit: "s" }, H: { value: H, unit: "m" }, g: { value: G, unit: "m/s^2" } };
+    summary = `pumpkin: total ${fmt3(ttot)} s`;
+  }
+  const html = `<div class="qbody"><div class="qtext"><p>${statement}</p><p>(a) Draw a free-body diagram ${variant === "rocket" ? "of the rocket while it burns fuel" : "of the pumpkin during the first part of the fall"}. Then answer (b)–(f).</p></div></div>
+    <div class="inner">${setupBlock()}${workTable(spec)}</div>`;
+  return { html, statement, givens, spec, summary };
+}
+
+/* ----- F1: experimental design ----- */
+function genF1(rng, variant) {
+  const thrust = variant === "thrust", F = sf3(rng.uni(0.2, 0.8));
+  const statement = thrust
+    ? "You are asked to determine the thrust produced by a fan cart using only a scale, a tape measure, a stopwatch, and a long, level track. The cart starts from rest. Neglect friction and drag."
+    : `You are asked to determine the mass of a fan cart whose fan produces a known thrust of ${fmt3(F)} N, using only a tape measure, a stopwatch, and a long, level track. The cart starts from rest. Neglect friction and drag.`;
+  const opts = ["I and II only", "I and III only", "II and III only", "I, II, and III"];
+  const spec = [
+    explain("a", "Which quantities will you measure, and with which tool will you measure each one? Define a symbol for each.", thrust ? "Mass m (scale); distance d (tape measure); time t from rest (stopwatch)." : "Distance d (tape measure); time t from rest (stopwatch).",
+      thrust ? ["Measure the cart’s mass with the scale", "Measure a distance along the track with the tape measure", "Measure the time to travel that distance from rest with the stopwatch"] : ["Measure a distance along the track with the tape measure", "Measure the time to travel that distance from rest with the stopwatch"],
+      thrust ? "m = mass from the scale. d = distance along the track (tape measure). t = time to cover d starting from rest (stopwatch)." : "d = distance along the track (tape measure). t = time to cover d starting from rest (stopwatch)."),
+    explain("b", `Explain how you will use your measurements to calculate the ${thrust ? "thrust" : "mass"}.`, thrust ? "Find a from d and t (starting from rest); thrust = net force = m·a." : "Find a from d and t (starting from rest); mass = thrust ÷ a.",
+      thrust ? ["Use the distance and time, starting from rest, to find the acceleration", "With no friction or drag, the thrust is the net force", "Thrust = mass × acceleration"] : ["Use the distance and time, starting from rest, to find the acceleration", "With no friction or drag, the thrust is the net force", "Mass = thrust ÷ acceleration"],
+      thrust ? "Since it starts from rest, I can find the acceleration from d and t. The thrust is the only horizontal force, so it equals the net force: mass times acceleration." : "Since it starts from rest, I can find the acceleration from d and t. The thrust is the net force, so the mass is the thrust divided by the acceleration."),
+    choice("c", "A classmate could instead measure: I. the length of the track, II. the thrust of the fan, III. the mass of the cart. Which would be needed to find the cart’s acceleration directly?", opts, "II and III only"),
+    choice("d", `If friction were actually not negligible, your calculated ${thrust ? "thrust" : "mass"} would be…`, ["greater than the actual value", "less than the actual value", "equal to the actual value"], thrust ? "less than the actual value" : "greater than the actual value"),
+  ];
+  const html = `<div class="inner"><p>${statement}</p>${explainBlock(spec[0], 3)}${explainBlock(spec[1], 3)}${mcBlock(spec[2], "col2")}${mcBlock(spec[3], "row")}</div>`;
+  return { html, statement, givens: thrust ? {} : { F_thrust: { value: F, unit: "N" } }, spec, summary: `find ${thrust ? "thrust" : "mass"}` };
+}
+
+/* ---------------- Question groups ----------------
+   Each group: id (unique within the unit), tier, title, desc, objective, minutes (estimated),
+   version (bump whenever the generator changes what students see or the answers),
+   def (default count), variants, gen, lessons: [+Physics lesson, name, problems used],
+   vlabels (preview names), optional arrange (seat-balancing order), optional tags. */
+const groups = [
+  { id: "A1", tier: 1, version: 1, minutes: 5, def: 0, title: "Draw free-body diagrams", desc: "Three short situations from a pool of 24",
+    objective: "Identify every force acting on an object and draw a labeled free-body diagram.",
+    variants: ["horizontal", "vertical", "mixed"], gen: genA1, vlabels: { horizontal: "Horizontal motion", vertical: "Vertical / at rest", mixed: "Mixed" },
+    lessons: [["6.5", "Free-Body Diagram Drawing 1", "#1–11"], ["6.6", "Free-Body Diagram Drawing 2", "#1–20"]] },
+  { id: "A2", tier: 1, version: 1, minutes: 4, def: 0, title: "Which forces act?", desc: "When forces act, and judge a claim about motion",
+    objective: "Describe when each force acts and its direction, and explain that motion does not require a force in the direction of motion.",
+    variants: ["standard"], gen: genA2, vlabels: { standard: "Two questions + a claim" },
+    lessons: [["6.2", "Inquiry: Free-Body Diagrams", "#1–3"], ["6.20", "Free Response", "#4"]] },
+  { id: "B1", tier: 1, version: 1, minutes: 4, def: 0, title: "Analyze a free-body diagram", desc: "N or mass, net force, speed",
+    objective: "Use a free-body diagram to find the net force and decide whether the speed increases, decreases, or stays constant.",
+    variants: ["horiz-inc", "horiz-dec", "horiz-const", "vert"], gen: genB1,
+    vlabels: { "horiz-inc": "Bicyclist, speeding up", "horiz-dec": "Bicyclist, slowing", "horiz-const": "Bicyclist, constant", vert: "Skydiver" },
+    lessons: [["6.7", "Free-Body Diagram Analysis 1", "#1–17"]] },
+  { id: "B2", tier: 2, version: 1, minutes: 5, def: 0, title: "Find the missing force", desc: "Net force and speed given; find the unknown force",
+    objective: "Work backward from the net force and the change in speed to find an unknown force.",
+    variants: ["inc", "dec", "const", "fall"], gen: genB2,
+    vlabels: { inc: "Bicyclist speeding up", dec: "Bicyclist slowing", const: "Bicyclist constant", fall: "Skydiver" },
+    lessons: [["6.8", "Free-Body Diagram Analysis 2", "#1–12"]] },
+  { id: "B3", tier: 2, version: 1, minutes: 6, def: 0, title: "Net force from motion", desc: "Graphs, overhead photos, elevators; justify",
+    objective: "Infer the direction of the net force from a position–time graph, velocity–time graph, motion diagram, or description, and justify it.",
+    variants: ["xt+vt", "vt+drone", "drone+elevator", "elevator+xt"], gen: genB3,
+    vlabels: { "xt+vt": "x–t graph + v–t graph", "vt+drone": "v–t graph + drone photos", "drone+elevator": "Drone photos + elevator", "elevator+xt": "Elevator + x–t graph" },
+    lessons: [["6.19", "Multiple Choice Challenge", "#3, #4, #5, #10"]] },
+  { id: "C1", tier: 1, version: 1, minutes: 4, def: 0, title: "Mass, weight, and third law", desc: "Earth vs. Moon or Mars; action–reaction; skaters",
+    objective: "Distinguish mass from weight and apply Newton’s third law to force pairs and interacting objects.",
+    variants: ["push", "book", "swimmer"], gen: genC1, vlabels: { push: "Pushed box pair", book: "Book on table pair", swimmer: "Swimmer pair" },
+    lessons: [["6.9", "Vocabulary and Concepts", "#14"], ["6.19", "Multiple Choice Challenge", "#6, #9"], ["6.20", "Free Response", "#3"]] },
+  { id: "C2", tier: 2, version: 1, minutes: 6, def: 0, title: "Fan-cart comparisons", desc: "Compare mass, net force, and acceleration",
+    objective: "Use proportional reasoning about net force and mass to compare accelerations.",
+    variants: ["fans", "blocks", "both"], gen: genC2, vlabels: { fans: "Different fans", blocks: "Different blocks", both: "Both differ" },
+    lessons: [["6.9", "Vocabulary and Concepts", "#10–13"], ["6.19", "Multiple Choice Challenge", "#1"], ["6.20", "Free Response", "#2"]] },
+  { id: "D1", tier: 2, version: 1, minutes: 9, def: 0, title: "Forces → acceleration", desc: "Complete problem: W or N, F_net, a, speed",
+    objective: "Find the net force and acceleration from the forces on an object, and describe how its speed changes.",
+    variants: ["pedal", "coast", "skydive", "parachute", "rocket", "fancart", "cannonball"], gen: genD1,
+    vlabels: { pedal: "Bicyclist pedaling", coast: "Bicyclist coasting", skydive: "Skydiver, no chute", parachute: "Parachute opening", rocket: "Rocket", fancart: "Fan cart", cannonball: "Cannonball rising" },
+    lessons: [["6.10", "Preparation Problems", "#1, #2"], ["6.11", "Complete Problems 1", "#1–4"], ["6.12", "Complete Problems 2", "#1–3"]] },
+  { id: "D2", tier: 2, version: 1, minutes: 9, def: 0, title: "Acceleration → missing force", desc: "Work backward from a to the unknown force",
+    objective: "Use the acceleration (or constant speed) to find the net force and then an unknown force.",
+    variants: ["bike-speed", "bike-const", "rocket", "parachute", "brake"], gen: genD2,
+    vlabels: { "bike-speed": "Bicyclist speeding up", "bike-const": "Bicyclist constant speed", rocket: "Rocket", parachute: "Parachute", brake: "Scooter braking" },
+    lessons: [["6.10", "Preparation Problems", "#3, #4"], ["6.13", "Complete Problems 3", "#1–3"]] },
+  { id: "D3", tier: 3, version: 1, minutes: 11, def: 0, title: "Elevator and scale", desc: "Mass, net force, scale reading, N vs. W",
+    objective: "Analyze vertical motion in an elevator to find the normal force (scale reading) and compare it with weight.",
+    variants: ["up-speed", "up-slow", "down-speed", "down-slow", "up-const"], gen: genD3,
+    vlabels: { "up-speed": "Up, speeding up", "up-slow": "Up, slowing", "down-speed": "Down, speeding up", "down-slow": "Down, slowing", "up-const": "Constant speed" },
+    lessons: [["6.13", "Complete Problems 3", "#4"], ["6.8", "Free-Body Diagram Analysis 2", "#13–16"], ["6.9", "Vocabulary and Concepts", "#15"], ["6.20", "Free Response", "#5"]] },
+  { id: "D4", tier: 2, version: 1, minutes: 7, def: 0, title: "Data and claims", desc: "Net force from data; evaluate a claim; predict",
+    objective: "Use data on thrust, drag, and mass to evaluate claims with evidence and predict acceleration.",
+    variants: ["same-net", "same-thrust", "mass"], gen: genD4, vlabels: { "same-net": "Claim: same net force", "same-thrust": "Claim: same thrust", mass: "Changing mass" },
+    lessons: [["6.3", "Inquiry: Force, Mass, & Acceleration", "#2, #3"], ["6.16", "Challenge", "#4"]] },
+  { id: "E1", tier: 3, version: 1, minutes: 11, def: 0, title: "Forces plus motion", desc: "Newton’s second law linked to kinematics",
+    objective: "Connect forces and motion: use the acceleration to move between Newton’s second law and the kinematic equations.",
+    variants: ["bike", "rocket", "ball"], gen: genE1, vlabels: { bike: "Bicyclist from rest", rocket: "Rocket burn", ball: "Dropped ball" }, tags: ["kinematics"],
+    lessons: [["6.14", "Complete Problems 4", "#1–3"], ["6.15", "Lab Problems", "#1"]] },
+  { id: "E2", tier: 3, version: 1, minutes: 14, def: 0, title: "Two-stage motion", desc: "Rocket burn then coast; pumpkin to terminal speed",
+    objective: "Solve multi-stage motion problems in which the forces, and so the acceleration, change partway through.",
+    variants: ["rocket", "pumpkin"], gen: genE2, vlabels: { rocket: "Rocket burn and coast", pumpkin: "Pumpkin to terminal speed" }, tags: ["kinematics"],
+    lessons: [["6.16", "Challenge", "#1, #3"]] },
+  { id: "F1", tier: 2, version: 1, minutes: 7, def: 0, title: "Experimental design", desc: "Plan a measurement of thrust or mass",
+    objective: "Design a procedure that uses measurements of motion and Newton’s second law to find an unknown thrust or mass.",
+    variants: ["thrust", "mass"], gen: genF1, vlabels: { thrust: "Find the thrust", mass: "Find the mass" },
+    lessons: [["6.20", "Free Response", "#1"], ["6.19", "Multiple Choice Challenge", "#12"]] },
+];
+
+QB.registerUnit({
+  id: "U6", number: 6, title: "Introduction to Forces", version: "1.0",
+  source: "+Physics Unit 6",
+  lessons: {
+    "6.2": "Inquiry: Free-Body Diagrams", "6.3": "Inquiry: Force, Mass, & Acceleration", "6.5": "Free-Body Diagram Drawing 1",
+    "6.6": "Free-Body Diagram Drawing 2", "6.7": "Free-Body Diagram Analysis 1", "6.8": "Free-Body Diagram Analysis 2",
+    "6.9": "Vocabulary and Concepts", "6.10": "Preparation Problems", "6.11": "Complete Problems 1", "6.12": "Complete Problems 2",
+    "6.13": "Complete Problems 3", "6.14": "Complete Problems 4", "6.15": "Lab Problems", "6.16": "Challenge",
+    "6.19": "Multiple Choice Challenge", "6.20": "Free Response",
+  },
+  groups,
+});
+})();
 
 </script>
 <script>/* ---- units/unit-07-friction.js ---- */
@@ -1685,7 +2427,7 @@ function fbdSketch(forces) {
   const seen = {};
   for (const f of forces) {
     const lab = f.label || f.symbol.split(" ")[0], same = forces.filter(x => x.direction === f.direction).length;
-    const i = seen[f.direction] = (seen[f.direction] ?? -1) + 1, off = same > 1 ? (i - (same - 1) / 2) * 12 : 0;
+    const i = seen[f.direction] = (seen[f.direction] ?? -1) + 1, off = same > 1 ? (i - (same - 1) / 2) * 22 : 0;
     if (f.direction === "up") out += ar(cx + off, cy - 9, cx + off, cy - 46) + t(cx + off + 5, cy - 36, lab);
     if (f.direction === "down") out += ar(cx + off, cy + 9, cx + off, cy + 46) + t(cx + off + 5, cy + 42, lab);
     if (f.direction === "right") out += ar(cx + 9, cy + off, cx + 58, cy + off) + t(cx + 62, cy + off + 4, lab);
@@ -1698,7 +2440,9 @@ function fillSample(root, q) {
   const mark = (scope, ans) => { if (!scope) return; const want = [].concat(ans); scope.querySelectorAll(".opt").forEach(o => { if (want.includes(o.dataset.opt)) o.classList.add("on"); }); };
   for (const p of q.spec) {
     const row = root.querySelector(`[data-tag="${p.tag}"]`);
-    if (p.type === "num" && row) {
+    if (p.type === "num" && row && row.classList.contains("cell")) {
+      row.insertAdjacentHTML("beforeend", hw(fmt3(p.value)));
+    } else if (p.type === "num" && row) {
       row.querySelector(".eq").innerHTML = hw(p.eq || "");
       row.querySelector(".sub").innerHTML = hw(subText(p, q));
       row.querySelector(".val").insertAdjacentHTML("beforeend", hw(fmt3(p.value), "v"));
@@ -1715,7 +2459,7 @@ function fillSample(root, q) {
       const l = root.querySelector(`.lines[data-tag="${p.tag}"]`);
       if (l) l.insertAdjacentHTML("beforeend", hw(p.fill || `Friction depends on μ and N. ${p.ideas[0]}, but ${p.ideas[1].charAt(0).toLowerCase() + p.ideas[1].slice(1)}.`));
     } else if (p.type === "fbd") {
-      const box = root.querySelector(".setup .fbd"); if (box) box.insertAdjacentHTML("beforeend", fbdSketch(p.forces));
+      const box = root.querySelector(`.fbd[data-tag="${p.tag}"]`) || root.querySelector(".setup .fbd"); if (box) box.insertAdjacentHTML("beforeend", fbdSketch(p.forces));
     } else if (p.type === "gu") {
       const [gBox, uBox] = root.querySelectorAll(".setup .gu > div");
       const given = Object.entries(q.givens).filter(([, v]) => !v.note)
